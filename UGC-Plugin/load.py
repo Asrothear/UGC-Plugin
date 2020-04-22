@@ -216,15 +216,17 @@ def plugin_app(parent):
     Create a pair of TK widgets for the EDMC main window
     """
     this.frame = tk.Frame(parent)
-    ugc_label = tk.Label(parent, text="Last Tick:").grid(row=21,column=1, padx=0, pady=(0,0), sticky=tk.EW)
-    this.ugc_tick_label = tk.Label(parent, text=str(this.ugc_tick)).grid(row=22,column=1, padx=0, pady=(0,0), sticky=tk.EW)
+    
+    # Last Tick
+    tk.Label(this.frame, text="Last Tick:").grid(row=0, column=0, sticky=tk.W)
+    this.tick_label = tk.Label(this.frame, text=str(this.ugc_tick)).grid(row=0, column=1, sticky=tk.W)
 
-    ugc_label = tk.Label(parent, text="UGC Plugin: ")
+    tk.Label(this.frame, text="Systeme: ").grid(row=1, column=0, sticky=tk.W)
     if (this.ugc_show_all.get() == 0):
-        this.status = tk.Label(parent, text=str(this.sys_state_a), foreground="green")
+        this.status = tk.Label(this.frame, text=str(this.sys_state_a), foreground="green").grid(row=1, column=1, sticky=tk.W)
     else:
-        this.status = tk.Label(parent, text=str(this.sys_state), foreground="green")
-    return (ugc_label, this.status)
+        this.status = tk.Label(this.frame, text=str(this.sys_state), foreground="green").grid(row=1, column=1, sticky=tk.W)
+    return this.frame
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     paras = {'pv':__VERSION__, 'user':cmdr}
@@ -253,5 +255,5 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     else:
         this.status['text'] = str(this.sys_state)
     get_ugc_tick()
-    this.ugc_tick_label['text'] = str(this.ugc_tick)
+    this.tick_label['text'] = str(this.ugc_tick)
     this.status["foreground"] = "white"
