@@ -215,8 +215,7 @@ def plugin_app(parent):
     """
     Create a pair of TK widgets for the EDMC main window
     """
-    this.frame = tk.Frame(parent)
-    
+    this.frame = tk.Frame(parent)  
     # Last Tick
     tk.Label(this.frame, text="Last Tick:").grid(row=0, column=0, sticky=tk.W)
     this.tick_label = tk.Label(this.frame, text=str(this.ugc_tick)).grid(row=0, column=1, sticky=tk.W)
