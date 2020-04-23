@@ -1,5 +1,10 @@
 #
+#
+#
 # UGC-Plugin
+#
+#
+#
 #
 # Migarting 2 -> 3
 #
@@ -25,6 +30,7 @@ else:
     import tkinter as tk
     import tkinter.ttk as ttk
 #
+#
 import myNotebook as nb
 import requests
 import json
@@ -32,17 +38,34 @@ import os.path
 from config import config
 from requests.utils import DEFAULT_CA_BUNDLE_PATH
 
-########################## V !! DO NOT CHANGE ANY OF THIS !! V #################################
+
+###################hier die Adresse eingeben#################################################
 SEND_TO_URL = 'https://asrothear.de/ugc/qls.php'
 STATE_URL = 'https://asrothear.de/ugc/get_state.php'
 TICK = 'https://asrothear.de/ugc/tick.php'
 __VERSION__ = 1.2
 PARAMS = {'pv':__VERSION__}
+#############################################################################################
+#
+#
+# configuration
+#
+#
 this = sys.modules[__name__]	# For holding module globals
 this.CONFIG_MAIN = 'UGC-Plugin'
+
+
 #############################################################################################
+#
+#
+# plugin start
+#
+#
 
 def plugin_start(plugin_dir):
+    """
+    Load this plugin into EDMC
+    """
     paras = PARAMS
     fetch_debug()
     fetch_show_all()
@@ -60,10 +83,13 @@ def plugin_start(plugin_dir):
 # start python3
 def plugin_start3(plugin_dir):
     return plugin_start(plugin_dir)
-
+    
 # plugin stop
 def plugin_stop():
-    return
+    """
+    EDMC is closing
+    """
+
 # get Debug state for start up
 def fetch_debug():
     this.ugc_debug = tk.IntVar(value=config.getint("ugc_debug"))
@@ -86,7 +112,7 @@ def pprint_list(liste, maxlen=40):
         return liste
     if (len(liste) == 0):
         return list()
-    if (isinstance(liste, list) and
+    if (isinstance(liste, list) and 
        (len(liste) == 1)):
         return liste[0]
     newlist = list()
@@ -102,7 +128,7 @@ def pprint_list(liste, maxlen=40):
     for element in newlist:
         string += element + "\n"
     return string[:-1]
-
+    
 # get all system if list_all
 def fetch_show_all():
     this.ugc_show_all = tk.IntVar(value=config.getint("ugc_show_all"))
@@ -111,6 +137,37 @@ def fetch_show_all():
     this.ugc_show_all = tk.IntVar(value=config.getint("ugc_show_all"))
     #this.ugc_show_all = this.ugc_show_all.get()
     return(this.ugc_show_all)
+
+# plugin prefs
+def plugin_prefs(parent, cmdr, is_beta):
+    PADX = 10
+    BUTTONX = 12	# indent Checkbuttons and Radiobuttons
+    PADY = 2
+    this.ugc_wurl = config.get("ugc_wurl")
+    this.ugc_rurl = config.get("ugc_rurl")
+    frame = nb.Frame(parent)
+    #Config Entry for Data-Receiver URL
+    this.ugc_wurl_label = nb.Label(frame, text="Sende URL")
+    this.ugc_wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
+    this.ugc_wurl_cfg = nb.Entry(frame)
+    this.ugc_wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    this.ugc_wurl_cfg.insert(0,this.ugc_wurl)
+    #Config Entry for Data-Receiver URL
+    this.ugc_rurl_label = nb.Label(frame, text="State URL")
+    this.ugc_rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
+    this.ugc_rurl_cfg = nb.Entry(frame)
+    this.ugc_rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
+
+    nb.Checkbutton(frame, text="Alle Zeigen", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
+    nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
+
+    nb.Label(frame, text="Version: "+str(__VERSION__)+"").grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    return frame
 
 def get_sys_state(paras):
     this.ugc_rurl = config.get("ugc_rurl")
@@ -136,55 +193,10 @@ def get_ugc_tick():
     this.ugc_tick   = pprint_list(this.ugc_tick)
     return(this.ugc_tick)
 
-#Auto Update the Plugin
-def get_update()
-
-    print('Beginning file download with requests')
-
-    url = 'http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg'
-    r = requests.get(url)
-
-    with open('/Users/scott/Downloads/cat3.jpg', 'wb') as f:
-        f.write(r.content)
-
-    # Retrieve HTTP meta-data
-    print(r.status_code)
-    print(r.headers['content-type'])
-    print(r.encoding)
-    return
-
-# plugin prefs
-def plugin_prefs(parent, cmdr, is_beta):
-    PADX = 10
-    BUTTONX = 12
-    PADY = 2
-    this.ugc_wurl = config.get("ugc_wurl")
-    this.ugc_rurl = config.get("ugc_rurl")
-    frame = nb.Frame(parent)
-    #Config Entry for Data-Receiver URL
-    this.ugc_wurl_label = nb.Label(frame, text="Send URL")
-    this.ugc_wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
-    this.ugc_wurl_cfg = nb.Entry(frame)
-    this.ugc_wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_wurl_cfg.insert(0,this.ugc_wurl)
-    #Config Entry for State-Receiver URL
-    this.ugc_rurl_label = nb.Label(frame, text="State URL")
-    this.ugc_rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
-    this.ugc_rurl_cfg = nb.Entry(frame)
-    this.ugc_rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
-    #
-    nb.Checkbutton(frame, text="Big List", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="No Auto-Update", variable=this.ugc_udate).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
-    nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Version: "+str(__VERSION__)+"").grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    return frame
-
 def prefs_changed(cmdr, is_beta):
+    """
+    Save settings.
+    """
     paras = {'pv':__VERSION__, 'user':cmdr}
     config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
     config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
@@ -200,46 +212,46 @@ def prefs_changed(cmdr, is_beta):
 
 # plugin Display im EDMC Main-Window
 def plugin_app(parent):
+    """
+    Create a pair of TK widgets for the EDMC main window
+    """
     this.frame = tk.Frame(parent)
-    # Last Tick
-    tk.Label(this.frame, text="Last Tick:").grid(row=0, column=0, sticky=tk.W)
-    this.tick_label = tk.Label(this.frame, text=str(this.ugc_tick)).grid(row=0, column=1, sticky=tk.W)
+    ugc_label = tk.Label(parent, text="Last Tick:").grid(row=21,column=1, padx=0, pady=(0,0), sticky=tk.EW)
+    this.ugc_tick_label = tk.Label(parent, text=str(this.ugc_tick)).grid(row=22,column=1, padx=0, pady=(0,0), sticky=tk.EW)
 
-    tk.Label(this.frame, text="Systeme: ").grid(row=1, column=0, sticky=tk.W)
+    ugc_label = tk.Label(parent, text="UGC Plugin: ")
     if (this.ugc_show_all.get() == 0):
-        this.status = tk.Label(this.frame, text=str(this.sys_state_a), foreground="green").grid(row=1, column=1, sticky=tk.W)
+        this.status = tk.Label(parent, text=str(this.sys_state_a), foreground="green")
     else:
-        this.status = tk.Label(this.frame, text=str(this.sys_state), foreground="green").grid(row=1, column=1, sticky=tk.W)
-    return this.frame
+        this.status = tk.Label(parent, text=str(this.sys_state), foreground="green")
+    return (ugc_label, this.status)
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     paras = {'pv':__VERSION__, 'user':cmdr}
-    #
     this.status["foreground"] = "orange"
-    #
+
     entry['user'] = cmdr
     entry['ugc_p_version'] = __VERSION__
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(entry).encode('utf-8')
-    #
+    
     if this.debug:
         print("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         print("UGC-DEBUG: start req...")
         print("UGC-DEBUG: JSON:", jsonString)
     if PY2:
         jsonString = str(jsonString).replace("'", "")
-    #
     response = requests.post(this.ugc_wurl, data=jsonString, headers=headers, verify=False)
+    
     if this.debug:
         print("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         print("UGC-DEBUG: "+this.sys_state_a)
-    #
+    
     get_sys_state(paras)
     if (this.ugc_show_all.get() == 0):
         this.status['text'] = str(this.sys_state_a)
     else:
         this.status['text'] = str(this.sys_state)
-    #
     get_ugc_tick()
-    this.tick_label['text'] = str(this.ugc_tick)
+    this.ugc_tick_label['text'] = str(this.ugc_tick)
     this.status["foreground"] = "white"
