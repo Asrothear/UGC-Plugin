@@ -137,11 +137,10 @@ def get_ugc_tick():
     return(this.ugc_tick)
 
 #Auto Update the Plugin
-def get_update()
-
+def get_update():
     print('Beginning file download with requests')
 
-    url = 'http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg'
+    #url = 'http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg'
     r = requests.get(url)
 
     with open('/Users/scott/Downloads/cat3.jpg', 'wb') as f:
