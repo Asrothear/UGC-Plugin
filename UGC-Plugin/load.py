@@ -101,7 +101,7 @@ def pprint_list(liste, maxlen=40):
     string = ""
     for element in newlist:
         string += element + "\n"
-    return string[:-1]
+    return(string[:-1])
 
 # get all system if list_all
 def fetch_show_all():
@@ -137,7 +137,7 @@ def get_ugc_tick():
     return(this.ugc_tick)
 
 #Auto Update the Plugin
-def get_update():
+def get_ugc_update():
     print('Beginning file download with requests')
 
     #url = 'http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg'
@@ -150,7 +150,7 @@ def get_update():
     print(r.status_code)
     print(r.headers['content-type'])
     print(r.encoding)
-    return
+    return()
 
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
@@ -174,7 +174,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
     #
     nb.Checkbutton(frame, text="Big List", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="No Auto-Update", variable=this.ugc_udate).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    #nb.Checkbutton(frame, text="No Auto-Update", variable=this.ugc_udate).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
     nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
