@@ -32,7 +32,6 @@ import os.path
 from config import config
 from requests.utils import DEFAULT_CA_BUNDLE_PATH
 
-
 ########################## V !! DO NOT CHANGE ANY OF THIS !! V #################################
 SEND_TO_URL = 'https://asrothear.de/ugc/qls.php'
 STATE_URL = 'https://asrothear.de/ugc/get_state.php'
@@ -42,7 +41,6 @@ PARAMS = {'pv':__VERSION__}
 this = sys.modules[__name__]	# For holding module globals
 this.CONFIG_MAIN = 'UGC-Plugin'
 #############################################################################################
-
 
 def plugin_start(plugin_dir):
     paras = PARAMS
@@ -65,7 +63,7 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-
+    return
 # get Debug state for start up
 def fetch_debug():
     this.ugc_debug = tk.IntVar(value=config.getint("ugc_debug"))
@@ -114,36 +112,6 @@ def fetch_show_all():
     #this.ugc_show_all = this.ugc_show_all.get()
     return(this.ugc_show_all)
 
-# plugin prefs
-def plugin_prefs(parent, cmdr, is_beta):
-    PADX = 10
-    BUTTONX = 12
-    PADY = 2
-    this.ugc_wurl = config.get("ugc_wurl")
-    this.ugc_rurl = config.get("ugc_rurl")
-    frame = nb.Frame(parent)
-    #Config Entry for Data-Receiver URL
-    this.ugc_wurl_label = nb.Label(frame, text="Sende URL")
-    this.ugc_wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
-    this.ugc_wurl_cfg = nb.Entry(frame)
-    this.ugc_wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_wurl_cfg.insert(0,this.ugc_wurl)
-    #Config Entry for State-Receiver URL
-    this.ugc_rurl_label = nb.Label(frame, text="State URL")
-    this.ugc_rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
-    this.ugc_rurl_cfg = nb.Entry(frame)
-    this.ugc_rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
-    #
-    nb.Checkbutton(frame, text="Alle Zeigen", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
-    nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Version: "+str(__VERSION__)+"").grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    return frame
-
 def get_sys_state(paras):
     this.ugc_rurl = config.get("ugc_rurl")
     this.sys_state = requests.get(this.ugc_rurl, params=paras, verify=False)
@@ -167,6 +135,54 @@ def get_ugc_tick():
         this.ugc_tick = json.loads(this.ugc_tick)
     this.ugc_tick   = pprint_list(this.ugc_tick)
     return(this.ugc_tick)
+
+#Auto Update the Plugin
+def get_update()
+
+    print('Beginning file download with requests')
+
+    url = 'http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg'
+    r = requests.get(url)
+
+    with open('/Users/scott/Downloads/cat3.jpg', 'wb') as f:
+        f.write(r.content)
+
+    # Retrieve HTTP meta-data
+    print(r.status_code)
+    print(r.headers['content-type'])
+    print(r.encoding)
+    return
+
+# plugin prefs
+def plugin_prefs(parent, cmdr, is_beta):
+    PADX = 10
+    BUTTONX = 12
+    PADY = 2
+    this.ugc_wurl = config.get("ugc_wurl")
+    this.ugc_rurl = config.get("ugc_rurl")
+    frame = nb.Frame(parent)
+    #Config Entry for Data-Receiver URL
+    this.ugc_wurl_label = nb.Label(frame, text="Send URL")
+    this.ugc_wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
+    this.ugc_wurl_cfg = nb.Entry(frame)
+    this.ugc_wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    this.ugc_wurl_cfg.insert(0,this.ugc_wurl)
+    #Config Entry for State-Receiver URL
+    this.ugc_rurl_label = nb.Label(frame, text="State URL")
+    this.ugc_rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
+    this.ugc_rurl_cfg = nb.Entry(frame)
+    this.ugc_rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
+    #
+    nb.Checkbutton(frame, text="Big List", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="No Auto-Update", variable=this.ugc_udate).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
+    nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="Version: "+str(__VERSION__)+"").grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    return frame
 
 def prefs_changed(cmdr, is_beta):
     paras = {'pv':__VERSION__, 'user':cmdr}
