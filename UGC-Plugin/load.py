@@ -193,6 +193,20 @@ def get_ugc_tick():
     this.ugc_tick   = pprint_list(this.ugc_tick)
     return(this.ugc_tick)
 
+def updateMainUi():
+    # Last tick
+    this.widget_tick_label.grid(row=0, column=0, sticky=tk.W)
+    this.widget_tick_label["text"] = "Last Tick:"
+    this.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
+    this.widget_tick_value["text"] = this.ugc_tick
+    print("UGC_TICK:", this.ugc_tick)
+    
+    # List systems
+    this.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
+    this.widget_systems_label["text"] = "Systems:"
+    this.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
+    this.widget_systems_value["text"] = this.sys_state if this.ugc_show_all.get() else this.sys_state_a
+    
 def prefs_changed(cmdr, is_beta):
     """
     Save settings.
@@ -205,31 +219,30 @@ def prefs_changed(cmdr, is_beta):
     fetch_debug()
     get_sys_state(paras)
     fetch_show_all()
-    if (this.ugc_show_all.get() == 0):
-        this.status['text'] = this.sys_state_a
-    else:
-        this.status['text'] = this.sys_state
+    updateMainUi()
 
 # plugin Display im EDMC Main-Window
 def plugin_app(parent):
     """
     Create a pair of TK widgets for the EDMC main window
     """
-    this.frame = tk.Frame(parent)  
-    # Last Tick
-    tk.Label(this.frame, text="Last Tick:").grid(row=0, column=0, sticky=tk.W)
-    this.tick_label = tk.Label(this.frame, text=str(this.ugc_tick)).grid(row=0, column=1, sticky=tk.W)
-
-    tk.Label(this.frame, text="Systeme: ").grid(row=1, column=0, sticky=tk.W)
-    if (this.ugc_show_all.get() == 0):
-        this.status = tk.Label(this.frame, text=str(this.sys_state_a), foreground="green").grid(row=1, column=1, sticky=tk.W)
-    else:
-        this.status = tk.Label(this.frame, text=str(this.sys_state), foreground="green").grid(row=1, column=1, sticky=tk.W)
+    frame = tk.Frame(parent)
+    this.emptyFrame = tk.Frame(frame)
+    frame.columnconfigure(1, weight=1)
+    
+    this.widget_tick_label = tk.Label(frame)
+    this.widget_tick_value = tk.Label(frame)
+    this.widget_systems_label = tk.Label(frame)
+    this.widget_systems_value = tk.Label(frame)
+        
+    this.frame = frame
+    updateMainUi()
+    this.widget_systems_value["foreground"] = "green"
     return this.frame
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     paras = {'pv':__VERSION__, 'user':cmdr}
-    this.status["foreground"] = "orange"
+    this.widget_systems_value["foreground"] = "orange"
 
     entry['user'] = cmdr
     entry['ugc_p_version'] = __VERSION__
@@ -248,11 +261,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         print("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         print("UGC-DEBUG: "+this.sys_state_a)
     
-    get_sys_state(paras)
-    if (this.ugc_show_all.get() == 0):
-        this.status['text'] = str(this.sys_state_a)
-    else:
-        this.status['text'] = str(this.sys_state)
     get_ugc_tick()
-    this.tick_label['text'] = str(this.ugc_tick)
-    this.status["foreground"] = "white"
+    get_sys_state(paras)
+    updateMainUi()
+    this.widget_systems_value["foreground"] = "white"
