@@ -193,19 +193,20 @@ def get_ugc_tick():
     this.ugc_tick   = pprint_list(this.ugc_tick)
     return(this.ugc_tick)
 
-def updateMainUi():
+def updateMainUi(tick_color="orange", systems_color="orange"):
     # Last tick
     this.widget_tick_label.grid(row=0, column=0, sticky=tk.W)
     this.widget_tick_label["text"] = "Last Tick:"
     this.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
     this.widget_tick_value["text"] = this.ugc_tick
-    print("UGC_TICK:", this.ugc_tick)
+    this.widget_tick_value["foreground"] = tick_color
     
     # List systems
     this.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
     this.widget_systems_label["text"] = "Systems:"
     this.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
     this.widget_systems_value["text"] = this.sys_state if this.ugc_show_all.get() else this.sys_state_a
+    this.widget_systems_value["foreground"] = systems_color
     
 def prefs_changed(cmdr, is_beta):
     """
@@ -242,7 +243,7 @@ def plugin_app(parent):
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     paras = {'pv':__VERSION__, 'user':cmdr}
-    this.widget_systems_value["foreground"] = "orange"
+    updateMainUI(systems_color="orange")
 
     entry['user'] = cmdr
     entry['ugc_p_version'] = __VERSION__
@@ -263,5 +264,4 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     
     get_ugc_tick()
     get_sys_state(paras)
-    updateMainUi()
-    this.widget_systems_value["foreground"] = "white"
+    updateMainUi(systems_color="white")
