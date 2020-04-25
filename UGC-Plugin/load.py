@@ -226,7 +226,7 @@ def prefs_changed(cmdr, is_beta):
 def plugin_app(parent):
     """
     Create a pair of TK widgets for the EDMC main window
-    ""
+    """
     frame = tk.Frame(parent)
     this.emptyFrame = tk.Frame(frame)
     frame.columnconfigure(1, weight=1)
