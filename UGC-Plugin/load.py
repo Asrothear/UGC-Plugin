@@ -68,7 +68,6 @@ def plugin_start(plugin_dir):
     """
     paras = PARAMS
     fetch_debug()
-    fetch_show_all()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
     if not config.get("ugc_wurl"):
@@ -83,12 +82,65 @@ def plugin_start(plugin_dir):
 # start python3
 def plugin_start3(plugin_dir):
     return plugin_start(plugin_dir)
-    
+
 # plugin stop
 def plugin_stop():
-    """
-    EDMC is closing
-    """
+    return()
+
+# plugin prefs
+def plugin_prefs(parent, cmdr, is_beta):
+    PADX = 10
+    BUTTONX = 12	# indent Checkbuttons and Radiobuttons
+    PADY = 2
+    this.ugc_wurl = config.get("ugc_wurl")
+    this.ugc_rurl = config.get("ugc_rurl")
+    frame = nb.Frame(parent)
+    #Config Entry for Data-Receiver URL
+    this.ugc_wurl_label = nb.Label(frame, text="Sende URL")
+    this.ugc_wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
+    this.ugc_wurl_cfg = nb.Entry(frame)
+    this.ugc_wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    this.ugc_wurl_cfg.insert(0,this.ugc_wurl)
+    #Config Entry for Data-Receiver URL
+    this.ugc_rurl_label = nb.Label(frame, text="State URL")
+    this.ugc_rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
+    this.ugc_rurl_cfg = nb.Entry(frame)
+    this.ugc_rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
+    #config interface
+    nb.Checkbutton(frame, text="Alle Zeigen", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
+    nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="Version: "+str(__VERSION__)+"").grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    return frame
+#store config
+def prefs_changed(cmdr, is_beta):
+    paras = {'pv':__VERSION__, 'user':cmdr}
+    config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
+    config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
+    config.set('ugc_debug', this.ugc_debug.get())
+    config.set('ugc_show_all', this.ugc_show_all.get())
+    fetch_debug()
+    updateMainUi()
+
+# plugin Display im EDMC Main-Window
+def plugin_app(parent):
+    frame = tk.Frame(parent)
+    this.emptyFrame = tk.Frame(frame)
+    frame.columnconfigure(1, weight=1)
+
+    this.widget_tick_label = tk.Label(frame)
+    this.widget_tick_value = tk.Label(frame)
+    this.widget_systems_label = tk.Label(frame)
+    this.widget_systems_value = tk.Label(frame)
+
+    this.frame = frame
+    updateMainUi()
+    this.widget_systems_value["foreground"] = "green"
+    return this.frame
 
 # get Debug state for start up
 def fetch_debug():
@@ -112,7 +164,7 @@ def pprint_list(liste, maxlen=40):
         return liste
     if (len(liste) == 0):
         return list()
-    if (isinstance(liste, list) and 
+    if (isinstance(liste, list) and
        (len(liste) == 1)):
         return liste[0]
     newlist = list()
@@ -128,48 +180,17 @@ def pprint_list(liste, maxlen=40):
     for element in newlist:
         string += element + "\n"
     return string[:-1]
-    
+
 # get all system if list_all
 def fetch_show_all():
     this.ugc_show_all = tk.IntVar(value=config.getint("ugc_show_all"))
     this.ugc_show_all = this.ugc_show_all.get()
     config.set("ugc_show_all", this.ugc_show_all)
     this.ugc_show_all = tk.IntVar(value=config.getint("ugc_show_all"))
-    #this.ugc_show_all = this.ugc_show_all.get()
     return(this.ugc_show_all)
 
-# plugin prefs
-def plugin_prefs(parent, cmdr, is_beta):
-    PADX = 10
-    BUTTONX = 12	# indent Checkbuttons and Radiobuttons
-    PADY = 2
-    this.ugc_wurl = config.get("ugc_wurl")
-    this.ugc_rurl = config.get("ugc_rurl")
-    frame = nb.Frame(parent)
-    #Config Entry for Data-Receiver URL
-    this.ugc_wurl_label = nb.Label(frame, text="Sende URL")
-    this.ugc_wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
-    this.ugc_wurl_cfg = nb.Entry(frame)
-    this.ugc_wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_wurl_cfg.insert(0,this.ugc_wurl)
-    #Config Entry for Data-Receiver URL
-    this.ugc_rurl_label = nb.Label(frame, text="State URL")
-    this.ugc_rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
-    this.ugc_rurl_cfg = nb.Entry(frame)
-    this.ugc_rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
-
-    nb.Checkbutton(frame, text="Alle Zeigen", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
-    nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
-
-    nb.Label(frame, text="Version: "+str(__VERSION__)+"").grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    return frame
-
 def get_sys_state(paras):
+    fetch_show_all()
     this.ugc_rurl = config.get("ugc_rurl")
     this.sys_state = requests.get(this.ugc_rurl, params=paras, verify=False)
     if PY2:
@@ -178,8 +199,10 @@ def get_sys_state(paras):
     else:
         jsonstring = this.sys_state.content.decode()
         systemlist = json.loads(jsonstring)
-    this.sys_state   = pprint_list(systemlist)
-    this.sys_state_a = pprint_list(systemlist[0])
+    if this.ugc_show_all.get():
+        this.sys_state   = pprint_list(systemlist)
+    else:
+        this.sys_state = pprint_list(systemlist[0])
     return(this.sys_state)
 
 def get_ugc_tick():
@@ -195,53 +218,22 @@ def get_ugc_tick():
 
 def updateMainUi(tick_color="orange", systems_color="orange"):
     # Last tick
+    get_ugc_tick()
     this.widget_tick_label.grid(row=0, column=0, sticky=tk.W)
     this.widget_tick_label["text"] = "Last Tick:"
     this.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
     this.widget_tick_value["text"] = this.ugc_tick
     this.widget_tick_value["foreground"] = tick_color
-    
+
     # List systems
     this.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
     this.widget_systems_label["text"] = "Systems:"
     this.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
-    this.widget_systems_value["text"] = this.sys_state if this.ugc_show_all.get() else this.sys_state_a
+    this.widget_systems_value["text"] = this.sys_state
     this.widget_systems_value["foreground"] = systems_color
-    
-def prefs_changed(cmdr, is_beta):
-    """
-    Save settings.
-    """
-    paras = {'pv':__VERSION__, 'user':cmdr}
-    config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
-    config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
-    config.set('ugc_debug', this.ugc_debug.get())
-    config.set('ugc_show_all', this.ugc_show_all.get())
-    fetch_debug()
-    get_sys_state(paras)
-    fetch_show_all()
-    updateMainUi()
-
-# plugin Display im EDMC Main-Window
-def plugin_app(parent):
-    """
-    Create a pair of TK widgets for the EDMC main window
-    """
-    frame = tk.Frame(parent)
-    this.emptyFrame = tk.Frame(frame)
-    frame.columnconfigure(1, weight=1)
-    
-    this.widget_tick_label = tk.Label(frame)
-    this.widget_tick_value = tk.Label(frame)
-    this.widget_systems_label = tk.Label(frame)
-    this.widget_systems_value = tk.Label(frame)
-        
-    this.frame = frame
-    updateMainUi()
-    this.widget_systems_value["foreground"] = "green"
-    return this.frame
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
+
     paras = {'pv':__VERSION__, 'user':cmdr}
     updateMainUI(systems_color="orange")
 
@@ -249,7 +241,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     entry['ugc_p_version'] = __VERSION__
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(entry).encode('utf-8')
-    
+
     if this.debug:
         print("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         print("UGC-DEBUG: start req...")
@@ -257,11 +249,9 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     if PY2:
         jsonString = str(jsonString).replace("'", "")
     response = requests.post(this.ugc_wurl, data=jsonString, headers=headers, verify=False)
-    
+
     if this.debug:
         print("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         print("UGC-DEBUG: "+this.sys_state_a)
-    
-    get_ugc_tick()
     get_sys_state(paras)
     updateMainUi(systems_color="white")
