@@ -91,7 +91,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Version: "+str(__VERSION__)+" "str(__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="Version: "+str(__VERSION__)+" "+str(__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
