@@ -1,13 +1,6 @@
-#
-#
-#
-# UGC-Plugin
-#
-#
-#
-#
-# Migarting 2 -> 3
-#
+#################################### UGC BGS Companion #############################################
+#####################################################################################################
+######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
 from __future__ import print_function
 DEBUG = False
 import sys
@@ -38,35 +31,19 @@ import os.path
 from config import config
 from requests.utils import DEFAULT_CA_BUNDLE_PATH
 
+#####################################################################################################
+######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
 
-###################hier die Adresse eingeben#################################################
-SEND_TO_URL = 'https://asrothear.de/ugc/qls.php'
-STATE_URL = 'https://asrothear.de/ugc/get_state.php'
-TICK = 'https://asrothear.de/ugc/tick.php'
-__VERSION__ = 1.2
-PARAMS = {'pv':__VERSION__}
-#############################################################################################
-#
-#
-# configuration
-#
-#
-this = sys.modules[__name__]	# For holding module globals
-this.CONFIG_MAIN = 'UGC-Plugin'
-
-
-#############################################################################################
-#
-#
-# plugin start
-#
-#
+SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be changed in plugin cfg-tab
+STATE_URL = 'https://asrothear.de/ugc/get_state.php' #for config init. can be changed in plugin cfg-tab
+TICK = 'https://asrothear.de/ugc/tick.php' #for config init. can be changed in plugin cfg-tab
+__VERSION__ = 1.3 # DONT TOUCH ME !!
+__BRANCH__ = "dev" # DONT TOUCH ME !!
+PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
+this = sys.modules[__name__] # DONT TOUCH ME !!
+this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
 
 def plugin_start(plugin_dir):
-    """
-    Load this plugin into EDMC
-    """
-    paras = PARAMS
     fetch_debug()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
@@ -76,7 +53,7 @@ def plugin_start(plugin_dir):
         config.set("ugc_rurl", STATE_URL)
     this.ugc_rurl = config.get("ugc_rurl")
     this.ugc_wurl = config.get("ugc_wurl")
-    get_sys_state(paras)
+    get_sys_state(PARAMS)
     return ("UGC-Plugin")
 
 # start python3
@@ -118,12 +95,13 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
-    paras = {'pv':__VERSION__, 'user':cmdr}
+    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
     config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
     config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
     config.set('ugc_debug', this.ugc_debug.get())
     config.set('ugc_show_all', this.ugc_show_all.get())
     fetch_debug()
+    get_sys_state(paras)
     updateMainUi()
 
 # plugin Display im EDMC Main-Window
@@ -234,7 +212,7 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
 
-    paras = {'pv':__VERSION__, 'user':cmdr}
+    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
     updateMainUI(systems_color="orange")
 
     entry['user'] = cmdr
