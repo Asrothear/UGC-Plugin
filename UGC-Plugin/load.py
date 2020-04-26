@@ -116,8 +116,8 @@ def plugin_app(parent):
     this.widget_systems_value = tk.Label(frame)
 
     this.frame = frame
-    updateMainUi()
-    this.widget_systems_value["foreground"] = "green"
+    updateMainUi(systems_color="green")
+    #this.widget_systems_value["foreground"] = "green"
     return this.frame
 
 # get Debug state for start up
@@ -193,7 +193,7 @@ def get_ugc_tick():
         this.ugc_tick = json.loads(this.ugc_tick)
     this.ugc_tick   = pprint_list(this.ugc_tick)
     return(this.ugc_tick)
-
+#
 def updateMainUi(tick_color="orange", systems_color="orange"):
     # Last tick
     get_ugc_tick()
@@ -209,11 +209,11 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
     this.widget_systems_value["text"] = this.sys_state
     this.widget_systems_value["foreground"] = systems_color
-
+#
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-
     paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
-    updateMainUI(systems_color="orange")
+
+    updateMainUi(systems_color="orange")
 
     entry['user'] = cmdr
     entry['ugc_p_version'] = __VERSION__
