@@ -95,7 +95,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
-    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
+    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':str(cmdr)}
     config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
     config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
     config.set('ugc_debug', this.ugc_debug.get())
@@ -211,7 +211,7 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_systems_value["foreground"] = systems_color
 #
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
+    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':str(cmdr)}
 
     updateMainUi(systems_color="orange")
 
