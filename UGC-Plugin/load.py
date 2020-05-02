@@ -140,21 +140,21 @@ def fetch_debug():
     return(this.debug)
 
 def fetch_update():
-	ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
-	ugc_update = ugc_update.get()
-	if ugc_update == 0:
-		if this.debug:
-			print("Updating")
-		config.set("ugc_update_first", 1)
-		config.set("ugc_update", 1)
-		plugin_update()
-	this.ugc_update = tk.IntVar(value=config.getint("ugc_update"))
-	this.update = this.ugc_update.get()
-	if this.update == 1:
-		this.update = True
-	else:
-		this.update = False
-	return(this.update)
+    ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
+    ugc_update = ugc_update.get()
+    if ugc_update == 0:
+        if this.debug:
+            print("Updating")
+        config.set("ugc_update_first", 1)
+        config.set("ugc_update", 1)
+        plugin_update()
+    this.ugc_update = tk.IntVar(value=config.getint("ugc_update"))
+    this.update = this.ugc_update.get()
+    if this.update == 1:
+        this.update = True
+    else:
+        this.update = False
+    return(this.update)
 
 
 # more element in one print line
