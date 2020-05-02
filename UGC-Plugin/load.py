@@ -68,7 +68,7 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-
+    return()
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
     PADX = 10
