@@ -64,7 +64,7 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-    if this.ugc_update == 1:
+    if this.update == 1:
         plugin_update()
     return()
 
@@ -148,9 +148,9 @@ def fetch_update():
     ugc_update = tk.IntVar(value=config.getint("ugc_update"))
     ugc_update = ugc_update.get()
     config.set("ugc_update", ugc_update)
-    ugc_update = tk.IntVar(value=config.getint("ugc_update"))
-    this.ugc_update = ugc_update.get()
-    return(this.ugc_update)
+    this.ugc_update = tk.IntVar(value=config.getint("ugc_update"))
+    this.update = ugc_update.get()
+    return(this.update)
 
 
 # more element in one print line
