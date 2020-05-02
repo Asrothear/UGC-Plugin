@@ -46,6 +46,7 @@ this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
 
 def plugin_start(plugin_dir):
     fetch_debug()
+    fetch_update()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
     if not config.get("ugc_wurl"):
@@ -63,7 +64,8 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-    plugin_update()
+    if this.ugc_update == 1:
+        plugin_update()
     return()
 
 # plugin prefs
@@ -88,6 +90,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
     #config interface
     nb.Checkbutton(frame, text="Alle Zeigen", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Auto Update", variable=this.ugc_update).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
     nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
@@ -101,6 +104,7 @@ def prefs_changed(cmdr, is_beta):
     config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
     config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
     config.set('ugc_debug', this.ugc_debug.get())
+    config.set('ugc_update', this.ugc_debug.get())
     config.set('ugc_show_all', this.ugc_show_all.get())
     fetch_debug()
     get_sys_state(paras)
@@ -134,6 +138,20 @@ def fetch_debug():
     else:
         this.debug = False
     return(this.debug)
+
+def fetch_update():
+    ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
+    ugc_update = ugc_update.get()
+    if ugc_update == 0:
+        plugin_update()
+        config.set("ugc_update_first", 1)
+    ugc_update = tk.IntVar(value=config.getint("ugc_update"))
+    ugc_update = ugc_update.get()
+    config.set("ugc_update", ugc_update)
+    ugc_update = tk.IntVar(value=config.getint("ugc_update"))
+    this.ugc_update = ugc_update.get()
+    return(this.ugc_update)
+
 
 # more element in one print line
 def pprint_list(liste, maxlen=40):
