@@ -39,14 +39,12 @@ SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be change
 STATE_URL = 'https://asrothear.de/ugc/get_state.php' #for config init. can be changed in plugin cfg-tab
 TICK = 'https://asrothear.de/ugc/tick.php' #for config init. can be changed in plugin cfg-tab
 __VERSION__ = 1.3 # DONT TOUCH ME !!
-__BRANCH__ = "dev" # DONT TOUCH ME !!
+__BRANCH__ = "dev2" # DONT TOUCH ME !!
 PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
 this = sys.modules[__name__] # DONT TOUCH ME !!
 this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
 
 def plugin_start(plugin_dir):
-
-    plugin_update()
     fetch_debug()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
@@ -65,6 +63,7 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
+    plugin_update()
     return()
 
 # plugin prefs
