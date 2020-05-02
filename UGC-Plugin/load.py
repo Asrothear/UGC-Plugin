@@ -47,6 +47,10 @@ this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
 def plugin_start(plugin_dir):
     fetch_debug()
     fetch_update()
+    if this.update:
+        if this.debug:
+            print("Updating on close")
+        plugin_update()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
     if not config.get("ugc_wurl"):
@@ -64,10 +68,6 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-	fetch_update()
-	if this.update:
-		print("Updating on close")
-		plugin_update()
 
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
@@ -144,7 +144,8 @@ def fetch_update():
 	ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
 	ugc_update = ugc_update.get()
 	if ugc_update == 0:
-		print("Updating")
+        if this.debug:
+		          print("Updating")
 		config.set("ugc_update_first", 1)
 		config.set("ugc_update", 1)
 		plugin_update()
