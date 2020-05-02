@@ -45,6 +45,8 @@ this = sys.modules[__name__] # DONT TOUCH ME !!
 this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
 
 def plugin_start(plugin_dir):
+
+    plugin_update()
     fetch_debug()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
@@ -63,7 +65,6 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-    plugin_update()
     return()
 
 # plugin prefs
