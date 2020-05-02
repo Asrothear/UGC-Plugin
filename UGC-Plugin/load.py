@@ -39,7 +39,7 @@ SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be change
 STATE_URL = 'https://asrothear.de/ugc/get_state.php' #for config init. can be changed in plugin cfg-tab
 TICK = 'https://asrothear.de/ugc/tick.php' #for config init. can be changed in plugin cfg-tab
 __VERSION__ = 1.3 # DONT TOUCH ME !!
-__BRANCH__ = "dev2" # DONT TOUCH ME !!
+__BRANCH__ = "dev2# DONT TOUCH ME !!
 PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
 this = sys.modules[__name__] # DONT TOUCH ME !!
 this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
@@ -64,9 +64,10 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-    if this.update == 1:
-        plugin_update()
-    return()
+	fetch_update()
+	if this.update:
+		print("Updating on close")
+		plugin_update()
 
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
@@ -104,7 +105,7 @@ def prefs_changed(cmdr, is_beta):
     config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
     config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
     config.set('ugc_debug', this.ugc_debug.get())
-    config.set('ugc_update', this.ugc_debug.get())
+    config.set('ugc_update', this.ugc_update.get())
     config.set('ugc_show_all', this.ugc_show_all.get())
     fetch_debug()
     get_sys_state(paras)
@@ -140,15 +141,20 @@ def fetch_debug():
     return(this.debug)
 
 def fetch_update():
-    ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
-    ugc_update = ugc_update.get()
-    if ugc_update == 0:
-        config.set("ugc_update_first", 1)
-        config.set("ugc_update", 1)
-        plugin_update()
-    this.ugc_update = tk.IntVar(value=config.getint("ugc_update"))
-    this.update = this.ugc_update.get()
-    return(this.update)
+	ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
+	ugc_update = ugc_update.get()
+	if ugc_update == 0:
+		print("Updating")
+		config.set("ugc_update_first", 1)
+		config.set("ugc_update", 1)
+		plugin_update()
+	this.ugc_update = tk.IntVar(value=config.getint("ugc_update"))
+	this.update = this.ugc_update.get()
+	if this.update == 1:
+		this.update = True
+	else:
+		this.update = False
+	return(this.update)
 
 
 # more element in one print line
