@@ -143,8 +143,8 @@ def fetch_update():
 	ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
 	ugc_update = ugc_update.get()
 	if ugc_update == 0:
-        if this.debug:
-            print("Updating")
+		if this.debug:
+			print("Updating")
 		config.set("ugc_update_first", 1)
 		config.set("ugc_update", 1)
 		plugin_update()
