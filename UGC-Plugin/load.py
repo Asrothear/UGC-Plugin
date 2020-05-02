@@ -28,6 +28,7 @@ import myNotebook as nb
 import requests
 import json
 import os.path
+import ugc_updater
 from config import config
 from requests.utils import DEFAULT_CA_BUNDLE_PATH
 
@@ -62,6 +63,7 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
+    plugin_update()
     return()
 
 # plugin prefs
@@ -95,7 +97,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
-    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':str(cmdr)}
+    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
     config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
     config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
     config.set('ugc_debug', this.ugc_debug.get())
@@ -210,8 +212,16 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_systems_value["text"] = this.sys_state
     this.widget_systems_value["foreground"] = systems_color
 #
+def plugin_update():
+    auto_updater = ugc_updater.ugc_updater()
+    downloaded = auto_updater.download_latest()
+    if downloaded:
+        auto_updater.make_backup()
+        auto_updater.clean_old_backups()
+        auto_updater.extract_latest()
+
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':str(cmdr)}
+    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
 
     updateMainUi(systems_color="orange")
 
