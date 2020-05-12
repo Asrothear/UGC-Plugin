@@ -262,6 +262,6 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
 
     if this.debug:
         print("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
-        print("UGC-DEBUG: "+this.sys_state_a)
+        print("UGC-DEBUG: "+this.sys_state)
     get_sys_state(paras)
     updateMainUi(systems_color="white")
