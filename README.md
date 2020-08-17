@@ -9,6 +9,7 @@ This is a EDMC Plugin sends all Journal Events from Elite Dangerous to a Webserv
 
 - [x] EDMC Plugin Published
 - [ ] Discordbot Published
+- [ ] PHP Webscript Encrypted
 - [ ] PHP Webscript Published
 
 
