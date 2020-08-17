@@ -21,6 +21,8 @@ In the future the PHP Code will be part of a release Package, but will stay clos
 
 
 
+
+
 [Chart Preview](https://asrothear.de/ugc/mega.php)
 
 ![Chart Preview](https://i.ibb.co/nmpbndd/chart.png)
