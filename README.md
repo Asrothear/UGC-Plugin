@@ -6,12 +6,14 @@ This is a EDMC Plugin sends all Journal Events from Elite Dangerous to a Webserv
 3. Use a Discord-Bot for Data Viewing
 4. Use Charts for BGS overview
 
+----------------------------------------------------------------------------------------------------------------------------
 
 - [x] EDMC Plugin Published
 - [ ] Discordbot Published
 - [ ] PHP Webscript Encrypted
 - [ ] PHP Webscript Published
 
+----------------------------------------------------------------------------------------------------------------------------
 
 At the actual developement state the source-codes for the webserver and the Discord-Bot remain unpublished,
 if you want to try this please contact me.
@@ -21,8 +23,7 @@ The  Discord-Bot will be added when i´m happy with the programming ^^
 In the future the PHP Code will be part of a release Package, but will stay closed-source.
 
 
-
-
+----------------------------------------------------------------------------------------------------------------------------
 
 [Chart Preview](https://asrothear.de/ugc/mega.php)
 
