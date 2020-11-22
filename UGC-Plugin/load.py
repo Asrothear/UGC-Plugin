@@ -38,8 +38,8 @@ from requests.utils import DEFAULT_CA_BUNDLE_PATH
 SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be changed in plugin cfg-tab
 STATE_URL = 'https://asrothear.de/ugc/get_state.php' #for config init. can be changed in plugin cfg-tab
 TICK = 'https://asrothear.de/ugc/tick.php' #for config init. can be changed in plugin cfg-tab
-__VERSION__ = 1.4 # DONT TOUCH ME !!
-__BRANCH__ = "dev_2"# DONT TOUCH ME !!
+__VERSION__ = 1.3 # DONT TOUCH ME !!
+__BRANCH__ = "rel"# DONT TOUCH ME !!
 PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
 this = sys.modules[__name__] # DONT TOUCH ME !!
 this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
@@ -249,10 +249,6 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
 
     entry['user'] = cmdr
     entry['ugc_p_version'] = __VERSION__
-    entry['station_data'] = station
-    entry['system_data'] = system
-    entry['state_data'] = state
-    entry['is_beta_data'] = is_beta
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(entry).encode('utf-8')
 
