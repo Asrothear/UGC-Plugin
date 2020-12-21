@@ -22,6 +22,7 @@ else:
     import tkinter.messagebox as tkMessageBox
     import tkinter as tk
     import tkinter.ttk as ttk
+    from pathlib import Path
 #
 #
 import myNotebook as nb
@@ -38,11 +39,13 @@ from requests.utils import DEFAULT_CA_BUNDLE_PATH
 SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be changed in plugin cfg-tab
 STATE_URL = 'https://asrothear.de/ugc/get_state.php' #for config init. can be changed in plugin cfg-tab
 TICK = 'https://asrothear.de/ugc/tick.php' #for config init. can be changed in plugin cfg-tab
-__VERSION__ = 1.3 # DONT TOUCH ME !!
+__VERSION__ = 1.6 # DONT TOUCH ME !!
 __BRANCH__ = "rel"# DONT TOUCH ME !!
 PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
 this = sys.modules[__name__] # DONT TOUCH ME !!
 this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
+HOME = str(Path.home())
+HOME = HOME.replace("\\", "/")
 
 def plugin_start(plugin_dir):
     fetch_debug()
@@ -135,6 +138,7 @@ def fetch_debug():
     this.debug = this.ugc_debug.get()
     if this.debug == 1:
         this.debug = True
+        print(HOME)
     else:
         this.debug = False
     return(this.debug)
@@ -244,13 +248,24 @@ def plugin_update():
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
-
+    data = entry
     updateMainUi(systems_color="orange")
-
-    entry['user'] = cmdr
-    entry['ugc_p_version'] = __VERSION__
+    print('UGC-DEBUG: '+entry['event'])
+    print(type(entry['event']))
+    if data['event'] == 'Music':
+        print("MUSIK")
+    if data['event'] == 'Market':
+        with open(''+HOME+'/Saved Games/Frontier Developments/Elite Dangerous/market.json', 'r') as myfile:
+            m_data=myfile.read()
+            data = json.loads(m_data)
+            if this.debug:
+                print(data)
+    data['user'] = cmdr
+    data['ugc_p_version'] = __VERSION__
+    data['data_system'] = system
+    
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
-    jsonString = json.dumps(entry).encode('utf-8')
+    jsonString = json.dumps(data).encode('utf-8')
 
     if this.debug:
         print("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
