@@ -250,10 +250,6 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
     data = entry
     updateMainUi(systems_color="orange")
-    print('UGC-DEBUG: '+entry['event'])
-    print(type(entry['event']))
-    if data['event'] == 'Music':
-        print("MUSIK")
     if data['event'] == 'Market':
         with open(''+HOME+'/Saved Games/Frontier Developments/Elite Dangerous/market.json', 'r') as myfile:
             m_data=myfile.read()
