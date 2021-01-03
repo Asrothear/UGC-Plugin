@@ -4,27 +4,12 @@
 from __future__ import print_function
 DEBUG = False
 import sys
-if (sys.version_info.major == 2):
-    # Python 2
-    PY2 = True
-    PY3 = False
-    from urllib2 import quote
-    from urllib2 import urlopen
-    import Tkinter as tk
-    import tkMessageBox
-    import ttk
-else:
-    # Python 3
-    PY3 = True
-    PY2 = False
-    from urllib.parse import quote
-    from urllib.request import urlopen
-    import tkinter.messagebox as tkMessageBox
-    import tkinter as tk
-    import tkinter.ttk as ttk
-    from pathlib import Path
-#
-#
+from urllib.parse import quote
+from urllib.request import urlopen
+import tkinter.messagebox as tkMessageBox
+import tkinter as tk
+import tkinter.ttk as ttk
+from pathlib import Path
 import myNotebook as nb
 import requests
 import json
@@ -35,11 +20,11 @@ from requests.utils import DEFAULT_CA_BUNDLE_PATH
 
 #####################################################################################################
 ######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
-
+RE_URL = 'https://asrothear.de/ugc/plugin.php' # DONT TOUCH ME !!
 SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be changed in plugin cfg-tab
-STATE_URL = 'https://asrothear.de/ugc/get_state.php' #for config init. can be changed in plugin cfg-tab
-TICK = 'https://asrothear.de/ugc/tick.php' #for config init. can be changed in plugin cfg-tab
-__VERSION__ = 1.7 # DONT TOUCH ME !!
+STATE_URL = 'https://asrothear.de/ugc/api_state.php' #for config init. can be changed in plugin cfg-tab
+TICK = 'https://asrothear.de/ugc/api_tick.php' #for config init. can be changed in plugin cfg-tab
+__VERSION__ = 1.8 # DONT TOUCH ME !!
 __BRANCH__ = "rel"# DONT TOUCH ME !!
 PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
 this = sys.modules[__name__] # DONT TOUCH ME !!
@@ -50,16 +35,28 @@ HOME = HOME.replace("\\", "/")
 def plugin_start(plugin_dir):
     fetch_debug()
     fetch_update()
+    fetch_re_url()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
     if not config.get("ugc_wurl"):
         config.set("ugc_wurl", SEND_TO_URL)
     if not config.get("ugc_rurl"):
         config.set("ugc_rurl", STATE_URL)
+    if this.re_url:
+        print("REURL")
+        config.set("ugc_wurl", SEND_TO_URL)
+        config.set("ugc_rurl", STATE_URL)
     this.ugc_rurl = config.get("ugc_rurl")
     this.ugc_wurl = config.get("ugc_wurl")
     get_sys_state(PARAMS)
     return ("UGC-Plugin")
+
+def fetch_re_url():
+    this.re_url = requests.get(RE_URL, verify=False)
+    this.re_url = this.re_url.content.decode()
+    this.re_url = json.loads(this.re_url)
+    print(this.re_url['force_url'])
+    return(this.re_url)
 
 # start python3
 def plugin_start3(plugin_dir):
@@ -163,9 +160,6 @@ def fetch_update():
 
 # more element in one print line
 def pprint_list(liste, maxlen=40):
-    if PY2:
-        if (type(liste) == unicode):
-            return liste
     if isinstance(liste, str):
         return liste
     if (len(liste) == 0):
@@ -199,12 +193,8 @@ def get_sys_state(paras):
     fetch_show_all()
     this.ugc_rurl = config.get("ugc_rurl")
     this.sys_state = requests.get(this.ugc_rurl, params=paras, verify=False)
-    if PY2:
-        jsonstring = str(this.sys_state.content)
-        systemlist = json.loads(jsonstring)
-    else:
-        jsonstring = this.sys_state.content.decode()
-        systemlist = json.loads(jsonstring)
+    jsonstring = this.sys_state.content.decode()
+    systemlist = json.loads(jsonstring)
     if this.ugc_show_all.get():
         this.sys_state   = pprint_list(systemlist)
     else:
@@ -213,12 +203,8 @@ def get_sys_state(paras):
 
 def get_ugc_tick():
     this.ugc_tick = requests.get(TICK, verify=False)
-    if PY2:
-        this.ugc_tick = str(this.ugc_tick.content)
-        this.ugc_tick = json.loads(this.ugc_tick)
-    else:
-        this.ugc_tick = this.ugc_tick.content.decode()
-        this.ugc_tick = json.loads(this.ugc_tick)
+    this.ugc_tick = this.ugc_tick.content.decode()
+    this.ugc_tick = json.loads(this.ugc_tick)
     this.ugc_tick   = pprint_list(this.ugc_tick)
     return(this.ugc_tick)
 #
@@ -267,8 +253,6 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         print("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         print("UGC-DEBUG: start req...")
         print("UGC-DEBUG: JSON:", jsonString)
-    if PY2:
-        jsonString = str(jsonString).replace("'", "")
     response = requests.post(this.ugc_wurl, data=jsonString, headers=headers, verify=False)
 
     if this.debug:
