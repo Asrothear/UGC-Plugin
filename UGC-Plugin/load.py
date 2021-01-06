@@ -13,6 +13,7 @@ from pathlib import Path
 import myNotebook as nb
 import requests
 import json
+import logging
 import os.path
 import ugc_updater
 from config import config
@@ -31,9 +32,32 @@ this = sys.modules[__name__] # DONT TOUCH ME !!
 this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
 HOME = str(Path.home())
 HOME = HOME.replace("\\", "/")
+#####################################################################################################
+############################ V !! New Logging function !! V #########################################
+######################## V !! NEVER EVER CHANGE ANY OF THIS !! V ####################################
+#####################################################################################################
+plugin_name = os.path.basename(os.path.dirname(__file__))
+logger = logging.getLogger(f'{plugin_name}')
+if not logger.hasHandlers():
+    level = logging.DEBUG
+    logger.setLevel(level)
+    logger_channel = logging.StreamHandler()
+    logger_channel.setLevel(level)
+    logger_formatter = logging.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
+    logger_formatter.default_msec_format = '%s.%03d'
+    logger_channel.setFormatter(logger_formatter)
+    logger.addHandler(logger_channel)
+    #logger.debug("debug") #Seems to works only on EDMC Debug mode
+    #logger.warning("Stawarningrting")
+    #logger.error("error")
+    #logger.critical("critical")
+    #logger.info("info")
 
 def plugin_start(plugin_dir):
+    logger.info(""+str(__VERSION__)+" "+str(__BRANCH__))
     fetch_debug()
+    logger.debug(str(this.debug))
     fetch_update()
     fetch_re_url()
     get_ugc_tick()
@@ -43,11 +67,16 @@ def plugin_start(plugin_dir):
     if not config.get("ugc_rurl"):
         config.set("ugc_rurl", STATE_URL)
     if this.re_url:
-        print("REURL")
+        logger.info("REURL")
         config.set("ugc_wurl", SEND_TO_URL)
         config.set("ugc_rurl", STATE_URL)
     this.ugc_rurl = config.get("ugc_rurl")
     this.ugc_wurl = config.get("ugc_wurl")
+    if this.debug:
+        logger.debug(str(this.ugc_rurl))
+        logger.debug(str(this.ugc_wurl))
+        logger.debug(str(this.re_url))
+        logger.debug(str(this.ugc_tick))
     get_sys_state(PARAMS)
     return ("UGC-Plugin")
 
@@ -55,7 +84,6 @@ def fetch_re_url():
     this.re_url = requests.get(RE_URL, verify=False)
     this.re_url = this.re_url.content.decode()
     this.re_url = json.loads(this.re_url)
-    print(this.re_url['force_url'])
     return(this.re_url)
 
 # start python3
@@ -66,7 +94,7 @@ def plugin_start3(plugin_dir):
 def plugin_stop():
     if this.update:
         if this.debug:
-            print("Updating on close")
+            logger.debug("Updating on close")
         plugin_update()
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
@@ -135,7 +163,6 @@ def fetch_debug():
     this.debug = this.ugc_debug.get()
     if this.debug == 1:
         this.debug = True
-        print(HOME)
     else:
         this.debug = False
     return(this.debug)
@@ -145,7 +172,7 @@ def fetch_update():
     ugc_update = ugc_update.get()
     if ugc_update == 0:
         if this.debug:
-            print("Updating")
+            logger.debug("Updating")
         config.set("ugc_update_first", 1)
         config.set("ugc_update", 1)
         plugin_update()
@@ -241,7 +268,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             m_data=myfile.read()
             data = json.loads(m_data)
             if this.debug:
-                print(data)
+                logger.debug(data)
     data['user'] = cmdr
     data['ugc_p_version'] = __VERSION__
     data['data_system'] = system
@@ -250,13 +277,13 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     jsonString = json.dumps(data).encode('utf-8')
 
     if this.debug:
-        print("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
-        print("UGC-DEBUG: start req...")
-        print("UGC-DEBUG: JSON:", jsonString)
+        logger.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
+        logger.debug("UGC-DEBUG: start req...")
+        logger.debug("UGC-DEBUG: JSON:", jsonString)
     response = requests.post(this.ugc_wurl, data=jsonString, headers=headers, verify=False)
 
     if this.debug:
-        print("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
-        print("UGC-DEBUG: "+this.sys_state)
+        logger.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
+        logger.debug("UGC-DEBUG: "+this.sys_state)
     get_sys_state(paras)
-    updateMainUi(systems_color="white")
+    updateMainUi(tick_color="white", systems_color="white")
