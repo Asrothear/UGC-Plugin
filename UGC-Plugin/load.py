@@ -25,8 +25,8 @@ RE_URL = 'https://asrothear.de/ugc/plugin.php' # DONT TOUCH ME !!
 SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be changed in plugin cfg-tab
 STATE_URL = 'https://asrothear.de/ugc/api_state.php' #for config init. can be changed in plugin cfg-tab
 TICK = 'https://asrothear.de/ugc/api_tick.php' #for config init. can be changed in plugin cfg-tab
-__VERSION__ = 1.8 # DONT TOUCH ME !!
-__BRANCH__ = "rel"# DONT TOUCH ME !!
+__VERSION__ = 2.0 # DONT TOUCH ME !!
+__BRANCH__ = "beta"# DONT TOUCH ME !!
 PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
 this = sys.modules[__name__] # DONT TOUCH ME !!
 this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
@@ -37,29 +37,29 @@ HOME = HOME.replace("\\", "/")
 ######################## V !! NEVER EVER CHANGE ANY OF THIS !! V ####################################
 #####################################################################################################
 plugin_name = os.path.basename(os.path.dirname(__file__))
-logger = logging.getLogger(f'{plugin_name}')
-if not logger.hasHandlers():
+ugc_log = logging.getLogger(f'{plugin_name}')
+if not ugc_log.hasHandlers():
     level = logging.DEBUG
-    logger.setLevel(level)
+    ugc_log.setLevel(level)
     logger_channel = logging.StreamHandler()
     logger_channel.setLevel(level)
     logger_formatter = logging.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logger_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
     logger_formatter.default_msec_format = '%s.%03d'
     logger_channel.setFormatter(logger_formatter)
-    logger.addHandler(logger_channel)
-    #logger.debug("debug") #Seems to works only on EDMC Debug mode
-    #logger.warning("Stawarningrting")
-    #logger.error("error")
-    #logger.critical("critical")
-    #logger.info("info")
+    ugc_log.addHandler(logger_channel)
+    #ugc_log.debug("debug") #Seems to works only on EDMC Debug mode
+    #ugc_log.warning("Stawarningrting")
+    #ugc_log.error("error")
+    #ugc_log.critical("critical")
+    #ugc_log.info("info")
 
 def plugin_start(plugin_dir):
-    logger.info(""+str(__VERSION__)+" "+str(__BRANCH__))
+    ugc_log.info(""+str(__VERSION__)+" "+str(__BRANCH__))
     fetch_debug()
-    logger.debug(str(this.debug))
+    ugc_log.debug(str(this.debug))
+    fetch_gl_cmd()
     fetch_update()
-    fetch_re_url()
     get_ugc_tick()
     this.plugin_dir = plugin_dir
     if not config.get("ugc_wurl"):
@@ -67,22 +67,24 @@ def plugin_start(plugin_dir):
     if not config.get("ugc_rurl"):
         config.set("ugc_rurl", STATE_URL)
     if this.re_url:
-        logger.info("REURL")
+        ugc_log.info("REURL")
         config.set("ugc_wurl", SEND_TO_URL)
         config.set("ugc_rurl", STATE_URL)
     this.ugc_rurl = config.get("ugc_rurl")
     this.ugc_wurl = config.get("ugc_wurl")
     if this.debug:
-        logger.debug(str(this.ugc_rurl))
-        logger.debug(str(this.ugc_wurl))
-        logger.debug(str(this.re_url))
-        logger.debug(str(this.ugc_tick))
+        ugc_log.debug(str(this.ugc_rurl))
+        ugc_log.debug(str(this.ugc_wurl))
+        ugc_log.debug(str(this.re_url))
+        ugc_log.debug(str(this.ugc_tick))
     get_sys_state(PARAMS)
     return ("UGC-Plugin")
 
-def fetch_re_url():
+def fetch_gl_cmd():
     this.re_url = requests.get(RE_URL, verify=False)
     this.re_url = this.re_url.content.decode()
+    this.re_url = json.loads(this.re_url)
+    this.re_url = json.loads(this.re_url)
     this.re_url = json.loads(this.re_url)
     return(this.re_url)
 
@@ -94,7 +96,7 @@ def plugin_start3(plugin_dir):
 def plugin_stop():
     if this.update:
         if this.debug:
-            logger.debug("Updating on close")
+            ugc_log.debug("Updating on close")
         plugin_update()
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
@@ -172,7 +174,7 @@ def fetch_update():
     ugc_update = ugc_update.get()
     if ugc_update == 0:
         if this.debug:
-            logger.debug("Updating")
+            ugc_log.debug("Updating")
         config.set("ugc_update_first", 1)
         config.set("ugc_update", 1)
         plugin_update()
@@ -268,7 +270,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             m_data=myfile.read()
             data = json.loads(m_data)
             if this.debug:
-                logger.debug(data)
+                ugc_log.debug(data)
     data['user'] = cmdr
     data['ugc_p_version'] = __VERSION__
     data['data_system'] = system
@@ -277,13 +279,13 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     jsonString = json.dumps(data).encode('utf-8')
 
     if this.debug:
-        logger.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
-        logger.debug("UGC-DEBUG: start req...")
-        logger.debug("UGC-DEBUG: JSON:", jsonString)
+        ugc_log.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
+        ugc_log.debug("UGC-DEBUG: start req...")
+        ugc_log.debug("UGC-DEBUG: JSON:", jsonString)
     response = requests.post(this.ugc_wurl, data=jsonString, headers=headers, verify=False)
 
     if this.debug:
-        logger.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
-        logger.debug("UGC-DEBUG: "+this.sys_state)
+        ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
+        ugc_log.debug("UGC-DEBUG: "+this.sys_state)
     get_sys_state(paras)
     updateMainUi(tick_color="white", systems_color="white")
