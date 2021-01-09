@@ -25,7 +25,7 @@ class _config:
     STATE_URL = 'https://asrothear.de/ugc/get_state.php'
     TICK = 'https://asrothear.de/ugc/tick.php'
     G_CMD = 'https://asrothear.de/ugc/plugin.php'
-    __VERSION__ = 2.0 # DONT TOUCH ME !!
+    __VERSION__ = 2.1 # DONT TOUCH ME !!
     __BRANCH__ = "beta"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
@@ -75,10 +75,6 @@ def plugin_start(plugin_dir):
         config.set("ugc_wurl", ugc.SEND_TO_URL)
     if not config.get("ugc_rurl"):
         config.set("ugc_rurl", ugc.STATE_URL)
-    if ugc.cmd['force_url']:
-        ugc_log.info("REURL")
-        config.set("ugc_wurl", ugc.SEND_TO_URL)
-        config.set("ugc_rurl", ugc.STATE_URL)
     ugc.rurl = config.get("ugc_rurl")
     ugc.wurl = config.get("ugc_wurl")
     if ugc.debug:
@@ -93,7 +89,12 @@ def fetch_gl_cmd():
     ugc.cmd = requests.get(ugc.G_CMD, verify=False)
     ugc.cmd = ugc.cmd.content.decode()
     ugc.cmd = json.loads(ugc.cmd)
-    print(ugc.cmd['force_url'])
+    if ugc.cmd['force_url']:
+        ugc_log.info("REURL")
+        config.set("ugc_wurl", ugc.SEND_TO_URL)
+        config.set("ugc_rurl", ugc.STATE_URL)
+    if ugc.cmd['force_update']:
+        plugin_update()
     return(ugc.cmd)
 
 # start python3
