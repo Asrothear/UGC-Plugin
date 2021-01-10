@@ -26,7 +26,7 @@ class _config:
     TICK = 'https://asrothear.de/ugc/tick.php'
     G_CMD = 'https://asrothear.de/ugc/plugin.php'
     __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __BRANCH__ = "beta"# DONT TOUCH ME !!
+    __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
