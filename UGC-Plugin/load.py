@@ -1,8 +1,6 @@
 #################################### UGC BGS Companion ##############################################
 #####################################################################################################
 ######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
-from __future__ import print_function
-DEBUG = False
 import sys
 from urllib.parse import quote
 from urllib.request import urlopen
@@ -18,26 +16,37 @@ import os.path
 import ugc_updater
 from config import config
 from requests.utils import DEFAULT_CA_BUNDLE_PATH
-
+from dataclasses import dataclass
 #####################################################################################################
 ######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
-RE_URL = 'https://asrothear.de/ugc/plugin.php' # DONT TOUCH ME !!
-SEND_TO_URL = 'https://asrothear.de/ugc/qls.php' #for config init. can be changed in plugin cfg-tab
-STATE_URL = 'https://asrothear.de/ugc/api_state.php' #for config init. can be changed in plugin cfg-tab
-TICK = 'https://asrothear.de/ugc/api_tick.php' #for config init. can be changed in plugin cfg-tab
-__VERSION__ = 2.0 # DONT TOUCH ME !!
-__BRANCH__ = "beta"# DONT TOUCH ME !!
-PARAMS = {'pv':__VERSION__, "br":__BRANCH__} # DONT TOUCH ME !!
-this = sys.modules[__name__] # DONT TOUCH ME !!
-this.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
-HOME = str(Path.home())
-HOME = HOME.replace("\\", "/")
+@dataclass
+class _config:
+    SEND_TO_URL = 'https://asrothear.de/ugc/qls.php'
+    STATE_URL = 'https://asrothear.de/ugc/get_state.php'
+    TICK = 'https://asrothear.de/ugc/tick.php'
+    G_CMD = 'https://asrothear.de/ugc/plugin.php'
+    __VERSION__ = 2.1 # DONT TOUCH ME !!
+    __BRANCH__ = "beta"# DONT TOUCH ME !!
+    CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
+    HOME = str(Path.home()).replace("\\", "/")
+    plugin_name = os.path.basename(os.path.dirname(__file__))
+    paras = None
+    rurl = None
+    wurl = None
+    plugin_dir = None
+    debug = False
+    debug_cfg = None
+    cmd = None
+    update = None
+    update_cfg = None
+
+ugc = _config()
+ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__BRANCH__}
 #####################################################################################################
 ############################ V !! New Logging function !! V #########################################
 ######################## V !! NEVER EVER CHANGE ANY OF THIS !! V ####################################
 #####################################################################################################
-plugin_name = os.path.basename(os.path.dirname(__file__))
-ugc_log = logging.getLogger(f'{plugin_name}')
+ugc_log = logging.getLogger(f'{ugc.plugin_name}')
 if not ugc_log.hasHandlers():
     level = logging.DEBUG
     ugc_log.setLevel(level)
@@ -55,38 +64,38 @@ if not ugc_log.hasHandlers():
     #ugc_log.info("info")
 
 def plugin_start(plugin_dir):
-    ugc_log.info(""+str(__VERSION__)+" "+str(__BRANCH__))
+    ugc_log.info(""+str(ugc.__VERSION__)+" "+str(ugc.__BRANCH__))
     fetch_debug()
-    ugc_log.debug(str(this.debug))
+    ugc_log.debug(str(ugc.debug))
     fetch_gl_cmd()
     fetch_update()
     get_ugc_tick()
-    this.plugin_dir = plugin_dir
+    ugc.plugin_dir = plugin_dir
     if not config.get("ugc_wurl"):
-        config.set("ugc_wurl", SEND_TO_URL)
+        config.set("ugc_wurl", ugc.SEND_TO_URL)
     if not config.get("ugc_rurl"):
-        config.set("ugc_rurl", STATE_URL)
-    if this.re_url:
-        ugc_log.info("REURL")
-        config.set("ugc_wurl", SEND_TO_URL)
-        config.set("ugc_rurl", STATE_URL)
-    this.ugc_rurl = config.get("ugc_rurl")
-    this.ugc_wurl = config.get("ugc_wurl")
-    if this.debug:
-        ugc_log.debug(str(this.ugc_rurl))
-        ugc_log.debug(str(this.ugc_wurl))
-        ugc_log.debug(str(this.re_url))
-        ugc_log.debug(str(this.ugc_tick))
-    get_sys_state(PARAMS)
+        config.set("ugc_rurl", ugc.STATE_URL)
+    ugc.rurl = config.get("ugc_rurl")
+    ugc.wurl = config.get("ugc_wurl")
+    if ugc.debug:
+        ugc_log.debug(str(ugc.rurl))
+        ugc_log.debug(str(ugc.wurl))
+        ugc_log.debug(str(ugc.cmd))
+        ugc_log.debug(str(ugc.tick))
+    get_sys_state()
     return ("UGC-Plugin")
 
 def fetch_gl_cmd():
-    this.re_url = requests.get(RE_URL, verify=False)
-    this.re_url = this.re_url.content.decode()
-    this.re_url = json.loads(this.re_url)
-    this.re_url = json.loads(this.re_url)
-    this.re_url = json.loads(this.re_url)
-    return(this.re_url)
+    ugc.cmd = requests.get(ugc.G_CMD, verify=False)
+    ugc.cmd = ugc.cmd.content.decode()
+    ugc.cmd = json.loads(ugc.cmd)
+    if ugc.cmd['force_url']:
+        ugc_log.info("REURL")
+        config.set("ugc_wurl", ugc.SEND_TO_URL)
+        config.set("ugc_rurl", ugc.STATE_URL)
+    if ugc.cmd['force_update']:
+        plugin_update()
+    return(ugc.cmd)
 
 # start python3
 def plugin_start3(plugin_dir):
@@ -94,8 +103,8 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
-    if this.update:
-        if this.debug:
+    if ugc.update:
+        if ugc.debug:
             ugc_log.debug("Updating on close")
         plugin_update()
 # plugin prefs
@@ -103,88 +112,88 @@ def plugin_prefs(parent, cmdr, is_beta):
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
-    this.ugc_wurl = config.get("ugc_wurl")
-    this.ugc_rurl = config.get("ugc_rurl")
+    ugc.wurl = config.get("ugc_wurl")
+    ugc.rurl = config.get("ugc_rurl")
     frame = nb.Frame(parent)
     #Config Entry for Data-Receiver URL
-    this.ugc_wurl_label = nb.Label(frame, text="Sende URL")
-    this.ugc_wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
-    this.ugc_wurl_cfg = nb.Entry(frame)
-    this.ugc_wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_wurl_cfg.insert(0,this.ugc_wurl)
+    ugc.wurl_label = nb.Label(frame, text="Sende URL")
+    ugc.wurl_label.grid(row=11, padx=PADX, sticky=tk.W)
+    ugc.wurl_cfg = nb.Entry(frame)
+    ugc.wurl_cfg.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    ugc.wurl_cfg.insert(0,ugc.wurl)
     #Config Entry for Data-Receiver URL
-    this.ugc_rurl_label = nb.Label(frame, text="State URL")
-    this.ugc_rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
-    this.ugc_rurl_cfg = nb.Entry(frame)
-    this.ugc_rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.ugc_rurl_cfg.insert(0,this.ugc_rurl)
+    ugc.rurl_label = nb.Label(frame, text="State URL")
+    ugc.rurl_label.grid(row=12, padx=PADX, sticky=tk.W)
+    ugc.rurl_cfg = nb.Entry(frame)
+    ugc.rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    ugc.rurl_cfg.insert(0,ugc.rurl)
     #config interface
-    nb.Checkbutton(frame, text="Alle Zeigen", variable=this.ugc_show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="Auto Update", variable=this.ugc_update).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="Debug", variable=this.ugc_debug).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Alle Zeigen", variable=ugc.show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Auto Update", variable=ugc.update_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Debug", variable=ugc.debug_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
     nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Version: "+str(__VERSION__)+" "+str(__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="Version: "+str(ugc.__VERSION__)+" "+str(ugc.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
-    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
-    config.set('ugc_wurl', this.ugc_wurl_cfg.get().strip())
-    config.set('ugc_rurl', this.ugc_rurl_cfg.get().strip())
-    config.set('ugc_debug', this.ugc_debug.get())
-    config.set('ugc_update', this.ugc_update.get())
-    config.set('ugc_show_all', this.ugc_show_all.get())
+    config.set('ugc_wurl', ugc.wurl_cfg.get().strip())
+    config.set('ugc_rurl', ugc.rurl_cfg.get().strip())
+    config.set('ugc_debug', ugc.debug_cfg.get())
+    config.set('ugc_update', ugc.update_cfg.get())
+    config.set('ugc_show_all', ugc.show_all.get())
     fetch_debug()
-    get_sys_state(paras)
+    get_sys_state()
     updateMainUi()
 
 # plugin Display im EDMC Main-Window
 def plugin_app(parent):
     frame = tk.Frame(parent)
-    this.emptyFrame = tk.Frame(frame)
+    ugc.emptyFrame = tk.Frame(frame)
     frame.columnconfigure(1, weight=1)
 
-    this.widget_tick_label = tk.Label(frame)
-    this.widget_tick_value = tk.Label(frame)
-    this.widget_systems_label = tk.Label(frame)
-    this.widget_systems_value = tk.Label(frame)
+    ugc.widget_tick_label = tk.Label(frame)
+    ugc.widget_tick_value = tk.Label(frame)
+    ugc.widget_systems_label = tk.Label(frame)
+    ugc.widget_systems_value = tk.Label(frame)
 
-    this.frame = frame
+    ugc.frame = frame
     updateMainUi(systems_color="green")
-    #this.widget_systems_value["foreground"] = "green"
-    return this.frame
+    #ugc.widget_systems_value["foreground"] = "green"
+    return ugc.frame
 
 # get Debug state for start up
 def fetch_debug():
-    this.ugc_debug = tk.IntVar(value=config.getint("ugc_debug"))
-    this.ugc_debug = this.ugc_debug.get()
-    config.set("ugc_debug", this.ugc_debug)
-    this.ugc_debug = tk.IntVar(value=config.getint("ugc_debug"))
-    this.debug = this.ugc_debug.get()
-    if this.debug == 1:
-        this.debug = True
+    ugc.debug_cfg = tk.IntVar(value=config.getint("ugc_debug"))
+    ugc.debug_cfg = ugc.debug_cfg.get()
+    config.set("ugc_debug", ugc.debug_cfg)
+    ugc.debug_cfg = tk.IntVar(value=config.getint("ugc_debug"))
+    ugc.debug = ugc.debug_cfg.get()
+    if ugc.debug == 1:
+        ugc.debug = True
     else:
-        this.debug = False
-    return(this.debug)
+        ugc.debug = False
+    
+    return(ugc.debug)
 
 def fetch_update():
-    ugc_update = tk.IntVar(value=config.getint("ugc_update_first"))
-    ugc_update = ugc_update.get()
-    if ugc_update == 0:
-        if this.debug:
+    ugc.update_cfg = tk.IntVar(value=config.getint("ugc_update_first"))
+    ugc.update = ugc.update_cfg.get()
+    if ugc.update == 0:
+        if ugc.debug:
             ugc_log.debug("Updating")
         config.set("ugc_update_first", 1)
         config.set("ugc_update", 1)
         plugin_update()
-    this.ugc_update = tk.IntVar(value=config.getint("ugc_update"))
-    this.update = this.ugc_update.get()
-    if this.update == 1:
-        this.update = True
+    ugc.update_cfg = tk.IntVar(value=config.getint("ugc_update"))
+    ugc.update = ugc.update_cfg.get()
+    if ugc.update == 1:
+        ugc.update = True
     else:
-        this.update = False
-    return(this.update)
+        ugc.update = False
+    return(ugc.update)
 
 
 # more element in one print line
@@ -212,46 +221,46 @@ def pprint_list(liste, maxlen=40):
 
 # get all system if list_all
 def fetch_show_all():
-    this.ugc_show_all = tk.IntVar(value=config.getint("ugc_show_all"))
-    this.ugc_show_all = this.ugc_show_all.get()
-    config.set("ugc_show_all", this.ugc_show_all)
-    this.ugc_show_all = tk.IntVar(value=config.getint("ugc_show_all"))
-    return(this.ugc_show_all)
+    ugc.show_all = tk.IntVar(value=config.getint("ugc_show_all"))
+    ugc.show_all = ugc.show_all.get()
+    config.set("ugc_show_all", ugc.show_all)
+    ugc.show_all = tk.IntVar(value=config.getint("ugc_show_all"))
+    return(ugc.show_all)
 
-def get_sys_state(paras):
+def get_sys_state():
     fetch_show_all()
-    this.ugc_rurl = config.get("ugc_rurl")
-    this.sys_state = requests.get(this.ugc_rurl, params=paras, verify=False)
-    jsonstring = this.sys_state.content.decode()
+    ugc.rurl = config.get("ugc_rurl")
+    ugc.sys_state = requests.get(ugc.rurl, params=ugc.paras, verify=False)
+    jsonstring = ugc.sys_state.content.decode()
     systemlist = json.loads(jsonstring)
-    if this.ugc_show_all.get():
-        this.sys_state   = pprint_list(systemlist)
+    if ugc.show_all.get():
+        ugc.sys_state   = pprint_list(systemlist)
     else:
-        this.sys_state = pprint_list(systemlist[0])
-    return(this.sys_state)
+        ugc.sys_state = pprint_list(systemlist[0])
+    return(ugc.sys_state)
 
 def get_ugc_tick():
-    this.ugc_tick = requests.get(TICK, verify=False)
-    this.ugc_tick = this.ugc_tick.content.decode()
-    this.ugc_tick = json.loads(this.ugc_tick)
-    this.ugc_tick   = pprint_list(this.ugc_tick)
-    return(this.ugc_tick)
+    ugc.tick = requests.get(ugc.TICK, verify=False)
+    ugc.tick = ugc.tick.content.decode()
+    ugc.tick = json.loads(ugc.tick)
+    ugc.tick   = pprint_list(ugc.tick)
+    return(ugc.tick)
 #
 def updateMainUi(tick_color="orange", systems_color="orange"):
     # Last tick
     get_ugc_tick()
-    this.widget_tick_label.grid(row=0, column=0, sticky=tk.W)
-    this.widget_tick_label["text"] = "Last Tick:"
-    this.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
-    this.widget_tick_value["text"] = this.ugc_tick
-    this.widget_tick_value["foreground"] = tick_color
+    ugc.widget_tick_label.grid(row=0, column=0, sticky=tk.W)
+    ugc.widget_tick_label["text"] = "Last Tick:"
+    ugc.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
+    ugc.widget_tick_value["text"] = ugc.tick
+    ugc.widget_tick_value["foreground"] = tick_color
 
     # List systems
-    this.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
-    this.widget_systems_label["text"] = "Systems:"
-    this.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
-    this.widget_systems_value["text"] = this.sys_state
-    this.widget_systems_value["foreground"] = systems_color
+    ugc.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
+    ugc.widget_systems_label["text"] = "Systems:"
+    ugc.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
+    ugc.widget_systems_value["text"] = ugc.sys_state
+    ugc.widget_systems_value["foreground"] = systems_color
 #
 def plugin_update():
     auto_updater = ugc_updater.ugc_updater()
@@ -262,30 +271,30 @@ def plugin_update():
         auto_updater.extract_latest()
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-    paras = {'pv':__VERSION__, "br":__BRANCH__, 'user':cmdr}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
-        with open(''+HOME+'/Saved Games/Frontier Developments/Elite Dangerous/market.json', 'r') as myfile:
+        with open(''+ugc.HOME+'/Saved Games/Frontier Developments/Elite Dangerous/market.json', 'r') as myfile:
             m_data=myfile.read()
             data = json.loads(m_data)
-            if this.debug:
+            if ugc.debug:
                 ugc_log.debug(data)
     data['user'] = cmdr
-    data['ugc_p_version'] = __VERSION__
+    data['ugc_p_version'] = ugc.__VERSION__
+    data['ugc_p_branch'] = ugc.__BRANCH__
     data['data_system'] = system
     
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(data).encode('utf-8')
 
-    if this.debug:
+    if ugc.debug:
         ugc_log.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         ugc_log.debug("UGC-DEBUG: start req...")
-        ugc_log.debug("UGC-DEBUG: JSON:", jsonString)
-    response = requests.post(this.ugc_wurl, data=jsonString, headers=headers, verify=False)
+        ugc_log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
 
-    if this.debug:
+    if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
-        ugc_log.debug("UGC-DEBUG: "+this.sys_state)
-    get_sys_state(paras)
+        ugc_log.debug("UGC-DEBUG: "+ugc.sys_state)
+    get_sys_state()
     updateMainUi(tick_color="white", systems_color="white")
