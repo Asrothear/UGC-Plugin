@@ -22,10 +22,11 @@ from dataclasses import dataclass
 @dataclass
 class _config:
     SEND_TO_URL = 'https://asrothear.de/ugc/qls.php'
-    STATE_URL = 'https://asrothear.de/ugc/get_state.php'
-    TICK = 'https://asrothear.de/ugc/tick.php'
+    STATE_URL = 'https://asrothear.de/ugc/api_state.php'
+    TICK = 'https://asrothear.de/ugc/api_tick.php'
     G_CMD = 'https://asrothear.de/ugc/plugin.php'
     __VERSION__ = 2.1 # DONT TOUCH ME !!
+    __MINOR__ = "1" # DONT TOUCH ME !!
     __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
@@ -41,7 +42,7 @@ class _config:
     update_cfg = None
 
 ugc = _config()
-ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__BRANCH__}
+ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
 #####################################################################################################
 ############################ V !! New Logging function !! V #########################################
 ######################## V !! NEVER EVER CHANGE ANY OF THIS !! V ####################################
@@ -64,7 +65,7 @@ if not ugc_log.hasHandlers():
     #ugc_log.info("info")
 
 def plugin_start(plugin_dir):
-    ugc_log.info(""+str(ugc.__VERSION__)+" "+str(ugc.__BRANCH__))
+    ugc_log.info(""+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__))
     fetch_debug()
     ugc_log.debug(str(ugc.debug))
     fetch_gl_cmd()
@@ -103,6 +104,7 @@ def plugin_start3(plugin_dir):
 
 # plugin stop
 def plugin_stop():
+    ugc_log.debug("Closing")
     if ugc.update:
         if ugc.debug:
             ugc_log.debug("Updating on close")
@@ -135,7 +137,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
-    nb.Label(frame, text="Version: "+str(ugc.__VERSION__)+" "+str(ugc.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="Version: "+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
@@ -271,6 +273,7 @@ def plugin_update():
         auto_updater.extract_latest()
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
+    ugc.paras = {'pv':ugc.__VERSION__, "br":+ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
