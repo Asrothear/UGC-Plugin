@@ -26,7 +26,7 @@ class _config:
     TICK = 'https://asrothear.de/ugc/api_tick.php'
     G_CMD = 'https://asrothear.de/ugc/plugin.php'
     __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __MINOR__ = "1" # DONT TOUCH ME !!
+    __MINOR__ = "2" # DONT TOUCH ME !!
     __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
@@ -111,6 +111,7 @@ def plugin_stop():
         plugin_update()
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
+    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
@@ -141,6 +142,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
+    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     config.set('ugc_wurl', ugc.wurl_cfg.get().strip())
     config.set('ugc_rurl', ugc.rurl_cfg.get().strip())
     config.set('ugc_debug', ugc.debug_cfg.get())
@@ -273,7 +275,7 @@ def plugin_update():
         auto_updater.extract_latest()
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-    ugc.paras = {'pv':ugc.__VERSION__, "br":+ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
