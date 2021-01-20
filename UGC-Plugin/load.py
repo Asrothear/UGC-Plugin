@@ -21,12 +21,12 @@ from dataclasses import dataclass
 ######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
 @dataclass
 class _config:
-    SEND_TO_URL = 'https://asrothear.de/ugc/qls.php'
-    STATE_URL = 'https://asrothear.de/ugc/api_state.php'
-    TICK = 'https://asrothear.de/ugc/api_tick.php'
-    G_CMD = 'https://asrothear.de/ugc/plugin.php'
+    SEND_TO_URL = 'https://ugc-plugin.ugc-tools.de/qls.php'
+    STATE_URL = 'https://ugc-plugin.ugc-tools.de/api_state.php'
+    TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
+    G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
     __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __MINOR__ = "2" # DONT TOUCH ME !!
+    __MINOR__ = "3" # DONT TOUCH ME !!
     __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
@@ -286,6 +286,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                 ugc_log.debug(data)
     data['user'] = cmdr
     data['ugc_p_version'] = ugc.__VERSION__
+    data['ugc_p_minor'] = ugc.__MINOR__
     data['ugc_p_branch'] = ugc.__BRANCH__
     data['data_system'] = system
     
