@@ -87,10 +87,10 @@ def plugin_start(plugin_dir):
     return ("UGC-Plugin")
 
 def fetch_gl_cmd():
-    ugc.cmd = requests.get(ugc.G_CMD, verify=False)
-    if(ugc.cmd.status_code > 202):
+    r_cmd = requests.get(ugc.G_CMD, verify=False)
+    if(r_cmd.status_code > 202):
         updateMainUi(tick_color="red", systems_color="red")
-    ugc.cmd = ugc.cmd.content.decode()
+    ugc.cmd = r_cmd.content.decode()
     ugc.cmd = json.loads(ugc.cmd)
     if ugc.cmd['force_url']:
         ugc_log.info("REURL")
@@ -237,10 +237,10 @@ def fetch_show_all():
 def get_sys_state():
     fetch_show_all()
     ugc.rurl = config.get("ugc_rurl")
-    ugc.sys_state = requests.get(ugc.rurl, params=ugc.paras, verify=False)
-    if(ugc.cmd.status_code > 202):
+    sys_state = requests.get(ugc.rurl, params=ugc.paras, verify=False)
+    if(sys_state.status_code > 202):
         updateMainUi(tick_color="red", systems_color="orange")
-    jsonstring = ugc.sys_state.content.decode()
+    jsonstring = sys_state.content.decode()
     systemlist = json.loads(jsonstring)
     if ugc.show_all.get():
         ugc.sys_state   = pprint_list(systemlist)
@@ -249,10 +249,10 @@ def get_sys_state():
     return(ugc.sys_state)
 
 def get_ugc_tick():
-    ugc.tick = requests.get(ugc.TICK, verify=False)
-    if(ugc.tick.status_code > 202):
+    tick = requests.get(ugc.TICK, verify=False)
+    if(tick.status_code > 202):
         updateMainUi(tick_color="orange", systems_color="red")
-    ugc.tick = ugc.tick.content.decode()
+    ugc.tick = tick.content.decode()
     ugc.tick = json.loads(ugc.tick)
     ugc.tick   = pprint_list(ugc.tick)
     return(ugc.tick)
