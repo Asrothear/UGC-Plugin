@@ -26,7 +26,7 @@ class _config:
     TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
     __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __MINOR__ = "3" # DONT TOUCH ME !!
+    __MINOR__ = "4" # DONT TOUCH ME !!
     __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
@@ -88,6 +88,8 @@ def plugin_start(plugin_dir):
 
 def fetch_gl_cmd():
     ugc.cmd = requests.get(ugc.G_CMD, verify=False)
+    if(ugc.cmd.status_code > 202):
+        updateMainUi(tick_color="red", systems_color="red")
     ugc.cmd = ugc.cmd.content.decode()
     ugc.cmd = json.loads(ugc.cmd)
     if ugc.cmd['force_url']:
@@ -138,6 +140,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Orange: Bussy").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
+    nb.Label(frame, text="Red: Error").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Version: "+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 #store config
@@ -235,6 +238,8 @@ def get_sys_state():
     fetch_show_all()
     ugc.rurl = config.get("ugc_rurl")
     ugc.sys_state = requests.get(ugc.rurl, params=ugc.paras, verify=False)
+    if(ugc.cmd.status_code > 202):
+        updateMainUi(tick_color="red", systems_color="orange")
     jsonstring = ugc.sys_state.content.decode()
     systemlist = json.loads(jsonstring)
     if ugc.show_all.get():
@@ -245,6 +250,8 @@ def get_sys_state():
 
 def get_ugc_tick():
     ugc.tick = requests.get(ugc.TICK, verify=False)
+    if(ugc.tick.status_code > 202):
+        updateMainUi(tick_color="orange", systems_color="red")
     ugc.tick = ugc.tick.content.decode()
     ugc.tick = json.loads(ugc.tick)
     ugc.tick   = pprint_list(ugc.tick)
@@ -303,4 +310,8 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         ugc_log.debug("UGC-DEBUG: "+ugc.sys_state)
     get_sys_state()
-    updateMainUi(tick_color="white", systems_color="white")
+    if(response.status_code <= 202):
+        updateMainUi(tick_color="white", systems_color="white")
+    else:
+        updateMainUi(tick_color="red", systems_color="red")
+
