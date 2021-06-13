@@ -26,7 +26,7 @@ class _config:
     TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
     __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __MINOR__ = "4" # DONT TOUCH ME !!
+    __MINOR__ = "5" # DONT TOUCH ME !!
     __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
@@ -173,10 +173,10 @@ def plugin_app(parent):
 
 # get Debug state for start up
 def fetch_debug():
-    ugc.debug_cfg = tk.IntVar(value=config.getint("ugc_debug"))
+    ugc.debug_cfg = tk.IntVar(value=config.get_int("ugc_debug"))
     ugc.debug_cfg = ugc.debug_cfg.get()
     config.set("ugc_debug", ugc.debug_cfg)
-    ugc.debug_cfg = tk.IntVar(value=config.getint("ugc_debug"))
+    ugc.debug_cfg = tk.IntVar(value=config.get_int("ugc_debug"))
     ugc.debug = ugc.debug_cfg.get()
     if ugc.debug == 1:
         ugc.debug = True
@@ -186,7 +186,7 @@ def fetch_debug():
     return(ugc.debug)
 
 def fetch_update():
-    ugc.update_cfg = tk.IntVar(value=config.getint("ugc_update_first"))
+    ugc.update_cfg = tk.IntVar(value=config.get_int("ugc_update_first"))
     ugc.update = ugc.update_cfg.get()
     if ugc.update == 0:
         if ugc.debug:
@@ -194,7 +194,7 @@ def fetch_update():
         config.set("ugc_update_first", 1)
         config.set("ugc_update", 1)
         plugin_update()
-    ugc.update_cfg = tk.IntVar(value=config.getint("ugc_update"))
+    ugc.update_cfg = tk.IntVar(value=config.get_int("ugc_update"))
     ugc.update = ugc.update_cfg.get()
     if ugc.update == 1:
         ugc.update = True
@@ -228,10 +228,10 @@ def pprint_list(liste, maxlen=40):
 
 # get all system if list_all
 def fetch_show_all():
-    ugc.show_all = tk.IntVar(value=config.getint("ugc_show_all"))
+    ugc.show_all = tk.IntVar(value=config.get_int("ugc_show_all"))
     ugc.show_all = ugc.show_all.get()
     config.set("ugc_show_all", ugc.show_all)
-    ugc.show_all = tk.IntVar(value=config.getint("ugc_show_all"))
+    ugc.show_all = tk.IntVar(value=config.get_int("ugc_show_all"))
     return(ugc.show_all)
 
 def get_sys_state():
