@@ -72,12 +72,12 @@ def plugin_start(plugin_dir):
     fetch_update()
     get_ugc_tick()
     ugc.plugin_dir = plugin_dir
-    if not config.get("ugc_wurl"):
+    if not config.get_str("ugc_wurl"):
         config.set("ugc_wurl", ugc.SEND_TO_URL)
-    if not config.get("ugc_rurl"):
+    if not config.get_str("ugc_rurl"):
         config.set("ugc_rurl", ugc.STATE_URL)
-    ugc.rurl = config.get("ugc_rurl")
-    ugc.wurl = config.get("ugc_wurl")
+    ugc.rurl = config.get_str("ugc_rurl")
+    ugc.wurl = config.get_str("ugc_wurl")
     if ugc.debug:
         ugc_log.debug(str(ugc.rurl))
         ugc_log.debug(str(ugc.wurl))
@@ -117,8 +117,8 @@ def plugin_prefs(parent, cmdr, is_beta):
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
-    ugc.wurl = config.get("ugc_wurl")
-    ugc.rurl = config.get("ugc_rurl")
+    ugc.wurl = config.get_str("ugc_wurl")
+    ugc.rurl = config.get_str("ugc_rurl")
     frame = nb.Frame(parent)
     #Config Entry for Data-Receiver URL
     ugc.wurl_label = nb.Label(frame, text="Sende URL")
@@ -236,7 +236,7 @@ def fetch_show_all():
 
 def get_sys_state():
     fetch_show_all()
-    ugc.rurl = config.get("ugc_rurl")
+    ugc.rurl = config.get_str("ugc_rurl")
     sys_state = requests.get(ugc.rurl, params=ugc.paras, verify=False)
     if(sys_state.status_code > 202):
         updateMainUi(tick_color="red", systems_color="orange")
