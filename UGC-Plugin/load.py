@@ -12,8 +12,10 @@ import myNotebook as nb
 import requests
 import json
 import logging
+import os
 import os.path
 import ugc_updater
+import ugc_crypt
 from config import config
 from requests.utils import DEFAULT_CA_BUNDLE_PATH
 from dataclasses import dataclass
@@ -25,9 +27,9 @@ class _config:
     STATE_URL = 'https://ugc-plugin.ugc-tools.de/api_state.php'
     TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
-    __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __MINOR__ = "6" # DONT TOUCH ME !!
-    __BRANCH__ = "rel"# DONT TOUCH ME !!
+    __VERSION__ = 3.0 # DONT TOUCH ME !!
+    __MINOR__ = "0" # DONT TOUCH ME !!
+    __BRANCH__ = "beta"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
@@ -40,7 +42,7 @@ class _config:
     cmd = None
     update = None
     update_cfg = None
-
+    CMDr = None
 ugc = _config()
 ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
 #####################################################################################################
@@ -84,6 +86,9 @@ def plugin_start(plugin_dir):
         ugc_log.debug(str(ugc.cmd))
         ugc_log.debug(str(ugc.tick))
     get_sys_state()
+    if config.get_str("ugc_cmdr"):
+        ugc.CMDr = config.get_str("ugc_cmdr")
+        ugc_log.info(ugc.CMDr)
     return ("UGC-Plugin")
 
 def fetch_gl_cmd():
@@ -142,6 +147,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Red: Error").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Version: "+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="CMDr: "+str(cmdr)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
@@ -315,3 +321,16 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     else:
         updateMainUi(tick_color="red", systems_color="red")
 
+def cmdr_data(data, is_beta):
+    """
+    We have new data on our commander
+    """
+    if data.get('commander') is None or data['commander'].get('name') is None:
+        raise ValueError("this isn't possible")
+    CMDr = data['commander']['name']
+    if not config.get_str("ugc_cmdr"):
+        config.set("ugc_cmdr", CMDr)
+        ugc.CMDr = CMDr
+    else:
+        ugc.CMDr = config.get_str("ugc_cmdr")
+        ugc_log.info(ugc.CMDr)
