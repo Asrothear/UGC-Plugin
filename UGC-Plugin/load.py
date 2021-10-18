@@ -43,6 +43,8 @@ class _config:
     update = None
     update_cfg = None
     CMDr = None
+    Hash = None
+    UUID = None
 ugc = _config()
 ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
 #####################################################################################################
@@ -88,7 +90,22 @@ def plugin_start(plugin_dir):
     get_sys_state()
     if config.get_str("ugc_cmdr"):
         ugc.CMDr = config.get_str("ugc_cmdr")
-        ugc_log.info(ugc.CMDr)
+        if not config.get_str("ugc_token"):
+            config.set("ugc_token", str(ugc_crypt.sign(ugc.CMDr)))
+            ugc.Hash = config.get_str("ugc_token")
+        else:
+            ugc.Hash = config.get_str("ugc_token")
+
+        if not config.get_str("ugc_uuid"):
+            config.set("ugc_uuid", str(ugc_crypt.muuid(ugc.CMDr)).replace("b'", "").replace("'", "").replace("\\", ""))
+            ugc.UUID = config.get_str("ugc_uuid")
+        else:
+            ugc.UUID = config.get_str("ugc_uuid")
+        if not ugc.debug:
+            ugc_log.info(ugc.CMDr)
+            ugc_log.info(bytes(ugc.UUID, "utf-8"))
+            ugc_log.info(ugc.Hash)
+            ugc_log.info(ugc_crypt.verify(ugc.UUID, ugc.Hash))
     return ("UGC-Plugin")
 
 def fetch_gl_cmd():
