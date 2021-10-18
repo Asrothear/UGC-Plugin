@@ -26,7 +26,7 @@ class _config:
     TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
     __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __MINOR__ = "5" # DONT TOUCH ME !!
+    __MINOR__ = "6" # DONT TOUCH ME !!
     __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
@@ -87,7 +87,7 @@ def plugin_start(plugin_dir):
     return ("UGC-Plugin")
 
 def fetch_gl_cmd():
-    r_cmd = requests.get(ugc.G_CMD, verify=False)
+    r_cmd = requests.get(ugc.G_CMD)
     if(r_cmd.status_code > 202):
         updateMainUi(tick_color="red", systems_color="red")
     ugc.cmd = r_cmd.content.decode()
@@ -237,7 +237,7 @@ def fetch_show_all():
 def get_sys_state():
     fetch_show_all()
     ugc.rurl = config.get_str("ugc_rurl")
-    sys_state = requests.get(ugc.rurl, params=ugc.paras, verify=False)
+    sys_state = requests.get(ugc.rurl, params=ugc.paras)
     if(sys_state.status_code > 202):
         updateMainUi(tick_color="red", systems_color="orange")
     jsonstring = sys_state.content.decode()
@@ -249,7 +249,7 @@ def get_sys_state():
     return(ugc.sys_state)
 
 def get_ugc_tick():
-    tick = requests.get(ugc.TICK, verify=False)
+    tick = requests.get(ugc.TICK)
     if(tick.status_code > 202):
         updateMainUi(tick_color="orange", systems_color="red")
     ugc.tick = tick.content.decode()
@@ -304,7 +304,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         ugc_log.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         ugc_log.debug("UGC-DEBUG: start req...")
         ugc_log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
-    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers)
 
     if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
