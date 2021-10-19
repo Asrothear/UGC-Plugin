@@ -47,6 +47,8 @@ class _config:
     UUID = None
     Crypt = None
     hwID = None
+    send_cmdr = None
+    send_cmdr_cfg = None
 ugc = _config()
 ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
 #####################################################################################################
@@ -78,6 +80,7 @@ def plugin_start(plugin_dir):
     fetch_gl_cmd()
     fetch_update()
     get_ugc_tick()
+    fetch_send_cmdr()
     ugc.plugin_dir = plugin_dir
     if not config.get_str("ugc_wurl"):
         config.set("ugc_wurl", ugc.SEND_TO_URL)
@@ -96,7 +99,7 @@ def plugin_start(plugin_dir):
         ugc.CMDr = config.get_str("ugc_cmdr")
         crypter()
     return ("UGC-Plugin")
-    
+
 def crypter():
     if not ugc.hwID:
             ugc.hwID = ugc.Crypt.ghwid()
@@ -111,7 +114,6 @@ def crypter():
         ugc_log.info(ugc.CMDr)
         ugc_log.info(ugc.UUID)
         ugc_log.info(ugc.Hash)
-        print(ugc.Crypt.verify(ugc.Hash, ugc.Crypt.sign(ugc.CMDr,ugc.hwID)))
     if not ugc.Crypt.verify(ugc.CMDr, ugc.Hash):
         ugc.Hash = ugc.Crypt.sign(ugc.CMDr,ugc.hwID)
 
@@ -142,7 +144,10 @@ def plugin_stop():
         plugin_update()
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
-    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    if ugc.send_cmdr == 1:
+        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    else:
+        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
@@ -162,6 +167,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     ugc.rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
     ugc.rurl_cfg.insert(0,ugc.rurl)
     #config interface
+    nb.Checkbutton(frame, text="CMDr Namen übertragen", variable=ugc.send_cmdr_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Alle Zeigen", variable=ugc.show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Auto Update", variable=ugc.update_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Debug", variable=ugc.debug_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
@@ -175,13 +181,18 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
-    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     config.set('ugc_wurl', ugc.wurl_cfg.get().strip())
     config.set('ugc_rurl', ugc.rurl_cfg.get().strip())
     config.set('ugc_debug', ugc.debug_cfg.get())
     config.set('ugc_update', ugc.update_cfg.get())
     config.set('ugc_show_all', ugc.show_all.get())
+    config.set('ugc_send_cmdr', ugc.send_cmdr_cfg.get())
     fetch_debug()
+    fetch_send_cmdr()
+    if ugc.send_cmdr:
+        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    else:
+        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
     get_sys_state()
     updateMainUi()
 
@@ -214,6 +225,22 @@ def fetch_debug():
         ugc.debug = False
     
     return(ugc.debug)
+
+def fetch_send_cmdr():
+    ugc.send_cmdr_cfg = tk.IntVar(value=config.get_int("ugc_send_cmdr_first"))
+    ugc.send_cmdr = ugc.send_cmdr_cfg.get()
+    if ugc.send_cmdr == 0:
+        config.set("ugc_send_cmdr_first", 1)
+        config.set("ugc_send_cmdr", 1)
+    ugc.send_cmdr_cfg = tk.IntVar(value=config.get_int("ugc_send_cmdr"))
+    ugc.send_cmdr = ugc.send_cmdr_cfg.get()
+    print("fetch_send_cmdr",ugc.send_cmdr)
+    if ugc.send_cmdr == 1:
+        ugc.send_cmdr = True
+    else:
+        ugc.send_cmdr = False
+    print(ugc.send_cmdr)
+    return(ugc.send_cmdr)
 
 def fetch_update():
     ugc.update_cfg = tk.IntVar(value=config.get_int("ugc_update_first"))
@@ -312,7 +339,10 @@ def plugin_update():
         auto_updater.extract_latest()
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    if ugc.send_cmdr == 1:
+        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    else:
+        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
