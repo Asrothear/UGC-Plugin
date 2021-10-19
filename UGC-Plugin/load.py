@@ -49,6 +49,7 @@ class _config:
     hwID = None
     send_cmdr = None
     send_cmdr_cfg = None
+    verify_token = ""
 ugc = _config()
 ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
 #####################################################################################################
@@ -168,6 +169,12 @@ def plugin_prefs(parent, cmdr, is_beta):
     ugc.rurl_cfg = nb.Entry(frame)
     ugc.rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
     ugc.rurl_cfg.insert(0,ugc.rurl)
+    #Config Entry for Verify-Token
+    ugc.vtk_label = nb.Label(frame, text="Verify Token")
+    ugc.vtk_label.grid(row=13, padx=PADX, sticky=tk.W)
+    ugc.vtk_cfg = nb.Entry(frame)
+    ugc.vtk_cfg.grid(row=13, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    ugc.vtk_cfg.insert(0,"")
     #config interface
     nb.Checkbutton(frame, text="CMDr Namen übertragen", variable=ugc.send_cmdr_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Alle Zeigen", variable=ugc.show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
@@ -191,6 +198,8 @@ def prefs_changed(cmdr, is_beta):
     config.set('ugc_update', ugc.update_cfg.get())
     config.set('ugc_show_all', ugc.show_all.get())
     config.set('ugc_send_cmdr', ugc.send_cmdr_cfg.get())
+    ugc.verify_token = ugc.vtk_cfg.get().strip()
+    print(ugc.verify_token)
     fetch_debug()
     fetch_send_cmdr()
     if ugc.send_cmdr:
@@ -360,8 +369,11 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                 ugc_log.debug(data)
     if ugc.send_cmdr == 1:
         data['user'] = cmdr
-    data["uuid"] = str(ugc.UUID)
-    data["token"] = ugc.Hash
+
+    data["ugc_token_v2"] = dict()
+    data["ugc_token_v2"]["uuid"] = str(ugc.UUID).replace("'","|")
+    data["ugc_token_v2"]["token"] = ugc.Hash
+    data["ugc_token_v2"]["verify"] = ugc.verify_token
     data['ugc_p_version'] = ugc.__VERSION__
     data['ugc_p_minor'] = ugc.__MINOR__
     data['ugc_p_branch'] = ugc.__BRANCH__
@@ -401,8 +413,10 @@ def send_test():
         data['user'] = "ugc.CMDr"
     updateMainUi(systems_color="orange")
     data["playload"] = "test"
-    data["uuid"] = str(ugc.UUID)
-    data["token"] = str(ugc.Hash)
+    data["ugc_token_v2"] = dict()
+    data["ugc_token_v2"]["uuid"] = str(ugc.UUID).replace("'","|")
+    data["ugc_token_v2"]["token"] = ugc.Hash    
+    data["ugc_token_v2"]["verify"] = ugc.verify_token
     data['ugc_p_version'] = ugc.__VERSION__
     data['ugc_p_minor'] = ugc.__MINOR__
     data['ugc_p_branch'] = ugc.__BRANCH__
