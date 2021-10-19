@@ -93,6 +93,8 @@ def plugin_start(plugin_dir):
         ugc_log.debug(str(ugc.wurl))
         ugc_log.debug(str(ugc.cmd))
         ugc_log.debug(str(ugc.tick))
+    
+    fetch_show_all()
     get_sys_state()
 
     if config.get_str("ugc_cmdr"):
@@ -110,7 +112,7 @@ def crypter():
         ugc.Hash = config.get_str("ugc_token")
     else:
         ugc.Hash = config.get_str("ugc_token")
-    if not ugc.debug:
+    if ugc.debug:
         ugc_log.info(ugc.CMDr)
         ugc_log.info(ugc.UUID)
         ugc_log.info(ugc.Hash)
@@ -178,6 +180,8 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="Red: Error").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Version: "+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="CMDr: "+str(cmdr)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    
+    nb.Button(frame, text="Test", command=lambda:send_test()).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
@@ -193,6 +197,8 @@ def prefs_changed(cmdr, is_beta):
         ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     else:
         ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
+    
+    fetch_show_all()
     get_sys_state()
     updateMainUi()
 
@@ -289,10 +295,10 @@ def fetch_show_all():
     ugc.show_all = ugc.show_all.get()
     config.set("ugc_show_all", ugc.show_all)
     ugc.show_all = tk.IntVar(value=config.get_int("ugc_show_all"))
+    print("sa",ugc.show_all.get())
     return(ugc.show_all)
 
 def get_sys_state():
-    fetch_show_all()
     ugc.rurl = config.get_str("ugc_rurl")
     sys_state = requests.get(ugc.rurl, params=ugc.paras)
     if(sys_state.status_code > 202):
@@ -343,6 +349,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     else:
         ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
+    print(type(entry))
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
@@ -351,11 +358,13 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             data = json.loads(m_data)
             if ugc.debug:
                 ugc_log.debug(data)
-    data['user'] = cmdr
+    if ugc.send_cmdr == 1:
+        data['user'] = cmdr
+    data["uuid"] = str(ugc.UUID)
+    data["token"] = ugc.Hash
     data['ugc_p_version'] = ugc.__VERSION__
     data['ugc_p_minor'] = ugc.__MINOR__
     data['ugc_p_branch'] = ugc.__BRANCH__
-    data['data_system'] = system
     
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(data).encode('utf-8')
@@ -383,3 +392,33 @@ def cmdr_data(data, is_beta):
         config.set("ugc_cmdr", CMDr)
         ugc.CMDr = CMDr
         crypter()
+
+def send_test():
+    data = dict()
+    if ugc.CMDr:
+        data['user'] = ugc.CMDr
+    else:
+        data['user'] = "ugc.CMDr"
+    updateMainUi(systems_color="orange")
+    data["playload"] = "test"
+    data["uuid"] = str(ugc.UUID)
+    data["token"] = str(ugc.Hash)
+    data['ugc_p_version'] = ugc.__VERSION__
+    data['ugc_p_minor'] = ugc.__MINOR__
+    data['ugc_p_branch'] = ugc.__BRANCH__
+    
+    headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
+    jsonString = json.dumps(data).encode('utf-8')
+
+    ugc_log.debug("UGC-DEBUG:TEST start req...")
+    ugc_log.debug("UGC-DEBUG:TEST JSON:"+ str(jsonString))
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers)
+
+    if ugc.debug:
+        ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
+        ugc_log.debug("UGC-DEBUG: "+ugc.sys_state)
+    get_sys_state()
+    if(response.status_code <= 202):
+        updateMainUi(tick_color="white", systems_color="white")
+    else:
+        updateMainUi(tick_color="red", systems_color="red")
