@@ -45,6 +45,8 @@ class _config:
     CMDr = None
     Hash = None
     UUID = None
+    Crypt = None
+    hwID = None
 ugc = _config()
 ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
 #####################################################################################################
@@ -70,6 +72,7 @@ if not ugc_log.hasHandlers():
 
 def plugin_start(plugin_dir):
     ugc_log.info(""+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__))
+    ugc.Crypt = ugc_crypt.ugc_crypt()
     fetch_debug()
     ugc_log.debug(str(ugc.debug))
     fetch_gl_cmd()
@@ -88,25 +91,29 @@ def plugin_start(plugin_dir):
         ugc_log.debug(str(ugc.cmd))
         ugc_log.debug(str(ugc.tick))
     get_sys_state()
+
     if config.get_str("ugc_cmdr"):
         ugc.CMDr = config.get_str("ugc_cmdr")
-        if not config.get_str("ugc_token"):
-            config.set("ugc_token", str(ugc_crypt.sign(ugc.CMDr)))
-            ugc.Hash = config.get_str("ugc_token")
-        else:
-            ugc.Hash = config.get_str("ugc_token")
-
-        if not config.get_str("ugc_uuid"):
-            config.set("ugc_uuid", str(ugc_crypt.muuid(ugc.CMDr)).replace("b'", "").replace("'", "").replace("\\", ""))
-            ugc.UUID = config.get_str("ugc_uuid")
-        else:
-            ugc.UUID = config.get_str("ugc_uuid")
-        if not ugc.debug:
-            ugc_log.info(ugc.CMDr)
-            ugc_log.info(bytes(ugc.UUID, "utf-8"))
-            ugc_log.info(ugc.Hash)
-            ugc_log.info(ugc_crypt.verify(ugc.UUID, ugc.Hash))
+        crypter()
     return ("UGC-Plugin")
+    
+def crypter():
+    if not ugc.hwID:
+            ugc.hwID = ugc.Crypt.ghwid()
+    if not ugc.UUID:
+            ugc.UUID = ugc.Crypt.muuid(ugc.CMDr,ugc.hwID)
+    if not config.get_str("ugc_token"):
+        config.set("ugc_token", ugc.Crypt.sign(ugc.CMDr,ugc.hwID))
+        ugc.Hash = config.get_str("ugc_token")
+    else:
+        ugc.Hash = config.get_str("ugc_token")
+    if not ugc.debug:
+        ugc_log.info(ugc.CMDr)
+        ugc_log.info(ugc.UUID)
+        ugc_log.info(ugc.Hash)
+        print(ugc.Crypt.verify(ugc.Hash, ugc.Crypt.sign(ugc.CMDr,ugc.hwID)))
+    if not ugc.Crypt.verify(ugc.CMDr, ugc.Hash):
+        ugc.Hash = ugc.Crypt.sign(ugc.CMDr,ugc.hwID)
 
 def fetch_gl_cmd():
     r_cmd = requests.get(ugc.G_CMD)
@@ -339,15 +346,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         updateMainUi(tick_color="red", systems_color="red")
 
 def cmdr_data(data, is_beta):
-    """
-    We have new data on our commander
-    """
     if data.get('commander') is None or data['commander'].get('name') is None:
         raise ValueError("this isn't possible")
     CMDr = data['commander']['name']
     if not config.get_str("ugc_cmdr"):
         config.set("ugc_cmdr", CMDr)
         ugc.CMDr = CMDr
-    else:
-        ugc.CMDr = config.get_str("ugc_cmdr")
-        ugc_log.info(ugc.CMDr)
+        crypter()
