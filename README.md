@@ -9,11 +9,11 @@ This is a EDMC Plugin sends all Journal Events from Elite Dangerous to a Webserv
 
 ----------------------------------------------------------------------------------------------------------------------------
 Task overview
- - [x]~~EDMC Plugin Published~~
- - [ ]~~New Webserver (API etc) Working~~
- - [ ]~~IDK yet but there will be something~~
- - [ ]~~Discordbot Published~~
- - [ ]~~Full Acces~~
+ - [x] ~~EDMC Plugin Published~~
+ - [ ] ~~New Webserver (API etc) Working~~
+ - [ ] ~~IDK yet but there will be something~~
+ - [ ] ~~Discordbot Published~~
+ - [ ] ~~Full Acces~~
 
 - [x] Working on new API Server and Plugin verificaton Method, for further Information see Beta Branches or upcoming Versions 3.0.0+ 
 
