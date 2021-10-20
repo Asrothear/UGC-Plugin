@@ -5,22 +5,24 @@ This is a EDMC Plugin sends all Journal Events from Elite Dangerous to a Webserv
 2. Track their Fleet Carrier
 3. Use a Discord-Bot for Data Viewing
 4. Use Charts for BGS overview
+5. Do more awesome stuff that will be possible!
 
 ----------------------------------------------------------------------------------------------------------------------------
 
 - [x] EDMC Plugin Published
+- [ ] New Webserver (API etc) Working
+- [ ] IDK yet but there will be something
 - [ ] Discordbot Published
-- [ ] PHP Webscript Encrypted
-- [ ] PHP Webscript Published
+- [ ] Full Acces
 
 ----------------------------------------------------------------------------------------------------------------------------
 
 At the actual developement state the source-codes for the webserver and the Discord-Bot remain unpublished,
 if you want to try this please contact me.
 
-The  Discord-Bot will be added when i´m happy with the programming ^^
+The  Discord-Bot will be added into the Web-Server / Web_Service ^^
 
-In the future the PHP Code will be part of a release Package, but will stay closed-source.
+In the future the Web-Service will be part of a release Package, but will stay closed-source.
 
 
 ----------------------------------------------------------------------------------------------------------------------------
