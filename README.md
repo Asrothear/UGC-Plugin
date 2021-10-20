@@ -8,22 +8,25 @@ This is a EDMC Plugin sends all Journal Events from Elite Dangerous to a Webserv
 5. Do more awesome stuff that will be possible!
 
 ----------------------------------------------------------------------------------------------------------------------------
+Task overview
+ ~~EDMC Plugin Published~~
+ ~~New Webserver (API etc) Working~~
+ ~~IDK yet but there will be something~~
+ ~~Discordbot Published~~
+ ~~Full Acces~~
 
-- [x] EDMC Plugin Published
-- [ ] New Webserver (API etc) Working
-- [ ] IDK yet but there will be something
-- [ ] Discordbot Published
-- [ ] Full Acces
+- [x] Working on new API Server and Plugin verificaton Method, for further Information see Beta Branches or upcoming Versions 3.0.0+ 
 
 ----------------------------------------------------------------------------------------------------------------------------
 
 At the actual developement state the source-codes for the webserver and the Discord-Bot remain unpublished,
 if you want to try this please contact me.
 
-The  Discord-Bot will be added into the Web-Server / Web_Service ^^
+~~The  Discord-Bot will be added into the Web-Server / Web_Service ^^~~
 
 In the future the Web-Service will be part of a release Package, but will stay closed-source.
 
+**For further Information see Beta Branches or upcoming Versions 3.0.0+**
 
 ----------------------------------------------------------------------------------------------------------------------------
 
