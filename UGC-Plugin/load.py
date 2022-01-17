@@ -11,7 +11,7 @@ from pathlib import Path
 import myNotebook as nb
 import requests
 import json
-import logging
+import logging as logs
 import os
 import os.path
 import ugc_updater
@@ -56,17 +56,17 @@ ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
 ############################ V !! New Logging function !! V #########################################
 ######################## V !! NEVER EVER CHANGE ANY OF THIS !! V ####################################
 #####################################################################################################
-ugc_log = logging.getLogger(f'{ugc.plugin_name}')
+ugc_log = logs.getLogger(f'{ugc.plugin_name}')
 if not ugc_log.hasHandlers():
-    level = logging.DEBUG
+    level = logs.DEBUG
     ugc_log.setLevel(level)
-    logger_channel = logging.StreamHandler()
-    logger_channel.setLevel(level)
-    logger_formatter = logging.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logger_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
-    logger_formatter.default_msec_format = '%s.%03d'
-    logger_channel.setFormatter(logger_formatter)
-    ugc_log.addHandler(logger_channel)
+    ugc_log_channel = logs.StreamHandler()
+    ugc_log_channel.setLevel(level)
+    ugc_log_formatter = logs.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ugc_log_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
+    ugc_log_formatter.default_msec_format = '%s.%03d'
+    ugc_log_channel.setFormatter(ugc_log_formatter)
+    ugc_log.addHandler(ugc_log_channel)
     #ugc_log.debug("debug") #Seems to works only on EDMC Debug mode
     #ugc_log.warning("Stawarningrting")
     #ugc_log.error("error")
@@ -385,7 +385,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         ugc_log.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         ugc_log.debug("UGC-DEBUG: start req...")
         ugc_log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
-    response = requests.post(ugc.wurl, data=jsonString, headers=headers)
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
 
     if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
@@ -406,13 +406,15 @@ def cmdr_data(data, is_beta):
         crypter()
 
 def send_test():
+    if ugc.verify_token =="":
+        ugc.verify_token = ugc.vtk_cfg.get().strip()
     data = dict()
     if ugc.CMDr:
         data['user'] = ugc.CMDr
     else:
         data['user'] = "ugc.CMDr"
     updateMainUi(systems_color="orange")
-    data["playload"] = "test"
+    data["event"] = "test"
     data["ugc_token_v2"] = dict()
     data["ugc_token_v2"]["uuid"] = str(ugc.UUID).replace("'","|")
     data["ugc_token_v2"]["token"] = ugc.Hash    
@@ -425,9 +427,8 @@ def send_test():
     jsonString = json.dumps(data).encode('utf-8')
 
     ugc_log.debug("UGC-DEBUG:TEST start req...")
-    ugc_log.debug("UGC-DEBUG:TEST JSON:"+ str(jsonString))
-    response = requests.post(ugc.wurl, data=jsonString, headers=headers)
-
+    ugc_log.debug("UGC-DEBUG:TEST JSON: "+ json.dumps(data))
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
     if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         ugc_log.debug("UGC-DEBUG: "+ugc.sys_state)
