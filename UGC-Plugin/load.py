@@ -147,6 +147,10 @@ def plugin_stop():
         plugin_update()
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
+    if not config.get_str("ugc_cmdr"):
+        config.set("ugc_cmdr", cmdr)
+        ugc.CMDr = cmdr
+        crypter()
     if ugc.send_cmdr == 1:
         ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     else:
@@ -407,23 +411,22 @@ def cmdr_data(data, is_beta):
 
 def send_test():
     if ugc.verify_token =="":
-        if
-        ugc.verify_token = ugc.vtk_cfg.get().strip()
+        if ugc.vtk_cfg.get().strip() !="":
+            ugc.verify_token = ugc.vtk_cfg.get().strip()
     data = dict()
     config.set('ugc_wurl', ugc.wurl_cfg.get().strip())
     config.set('ugc_rurl', ugc.rurl_cfg.get().strip())
-    config.set('ugc_debug', ugc.debug_cfg.get())
-    config.set('ugc_update', ugc.update_cfg.get())
-    config.set('ugc_show_all', ugc.show_all.get())
-    config.set('ugc_send_cmdr', ugc.send_cmdr_cfg.get())
+    ugc.wurl = config.get_str("ugc_wurl")
+    ugc.rurl = config.get_str("ugc_rurl")
     if ugc.send_cmdr == 1:
-        data['user'] = cmdr
+        data['user'] = ugc.CMDr
     updateMainUi(systems_color="orange")
     data["event"] = "test"
     data["ugc_token_v2"] = dict()
     data["ugc_token_v2"]["uuid"] = str(ugc.UUID).replace("'","|")
-    data["ugc_token_v2"]["token"] = ugc.Hash    
+    data["ugc_token_v2"]["token"] = ugc.Hash
     data["ugc_token_v2"]["verify"] = ugc.verify_token
+    
     data['ugc_p_version'] = ugc.__VERSION__
     data['ugc_p_minor'] = ugc.__MINOR__
     data['ugc_p_branch'] = ugc.__BRANCH__
