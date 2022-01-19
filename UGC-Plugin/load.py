@@ -23,8 +23,8 @@ from dataclasses import dataclass
 ######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
 @dataclass
 class _config:
-    SEND_TO_URL = 'https://ugc-plugin.ugc-tools.de/qls.php'
-    STATE_URL = 'https://ugc-plugin.ugc-tools.de/api_state.php'
+    SEND_TO_URL = 'http://api.ugc-tools.de/api/v1/QLS'
+    STATE_URL = 'http://api.ugc-tools.de/api/v1/State'
     TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
     __VERSION__ = 3.0 # DONT TOUCH ME !!
@@ -407,12 +407,17 @@ def cmdr_data(data, is_beta):
 
 def send_test():
     if ugc.verify_token =="":
+        if
         ugc.verify_token = ugc.vtk_cfg.get().strip()
     data = dict()
-    if ugc.CMDr:
-        data['user'] = ugc.CMDr
-    else:
-        data['user'] = "ugc.CMDr"
+    config.set('ugc_wurl', ugc.wurl_cfg.get().strip())
+    config.set('ugc_rurl', ugc.rurl_cfg.get().strip())
+    config.set('ugc_debug', ugc.debug_cfg.get())
+    config.set('ugc_update', ugc.update_cfg.get())
+    config.set('ugc_show_all', ugc.show_all.get())
+    config.set('ugc_send_cmdr', ugc.send_cmdr_cfg.get())
+    if ugc.send_cmdr == 1:
+        data['user'] = cmdr
     updateMainUi(systems_color="orange")
     data["event"] = "test"
     data["ugc_token_v2"] = dict()
