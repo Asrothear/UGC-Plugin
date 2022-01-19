@@ -422,12 +422,13 @@ def send_test():
     data['ugc_p_version'] = ugc.__VERSION__
     data['ugc_p_minor'] = ugc.__MINOR__
     data['ugc_p_branch'] = ugc.__BRANCH__
+    data['payload'] = "bärenkatapult"
     
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(data).encode('utf-8')
 
     ugc_log.debug("UGC-DEBUG:TEST start req...")
-    ugc_log.debug("UGC-DEBUG:TEST JSON: "+ json.dumps(data))
+    ugc_log.debug("UGC-DEBUG:TEST JSON: "+ str(jsonString))
     response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
     if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
