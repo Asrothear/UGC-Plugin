@@ -25,7 +25,7 @@ from dataclasses import dataclass
 class _config:
     SEND_TO_URL = 'http://api.ugc-tools.de/api/v1/QLS'
     STATE_URL = 'http://api.ugc-tools.de/api/v1/State'
-    TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
+    TICK = 'http://api.ugc-tools.de/api/v1/Tick'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
     __VERSION__ = 3.0 # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
@@ -203,7 +203,6 @@ def prefs_changed(cmdr, is_beta):
     config.set('ugc_show_all', ugc.show_all.get())
     config.set('ugc_send_cmdr', ugc.send_cmdr_cfg.get())
     ugc.verify_token = ugc.vtk_cfg.get().strip()
-    print(ugc.verify_token)
     fetch_debug()
     fetch_send_cmdr()
     if ugc.send_cmdr:
@@ -253,12 +252,10 @@ def fetch_send_cmdr():
         config.set("ugc_send_cmdr", 1)
     ugc.send_cmdr_cfg = tk.IntVar(value=config.get_int("ugc_send_cmdr"))
     ugc.send_cmdr = ugc.send_cmdr_cfg.get()
-    print("fetch_send_cmdr",ugc.send_cmdr)
     if ugc.send_cmdr == 1:
         ugc.send_cmdr = True
     else:
         ugc.send_cmdr = False
-    print(ugc.send_cmdr)
     return(ugc.send_cmdr)
 
 def fetch_update():
@@ -308,7 +305,6 @@ def fetch_show_all():
     ugc.show_all = ugc.show_all.get()
     config.set("ugc_show_all", ugc.show_all)
     ugc.show_all = tk.IntVar(value=config.get_int("ugc_show_all"))
-    print("sa",ugc.show_all.get())
     return(ugc.show_all)
 
 def get_sys_state():
@@ -325,7 +321,7 @@ def get_sys_state():
     return(ugc.sys_state)
 
 def get_ugc_tick():
-    tick = requests.get(ugc.TICK)
+    tick = requests.get(ugc.TICK, verify=False)
     if(tick.status_code > 202):
         updateMainUi(tick_color="orange", systems_color="red")
     ugc.tick = tick.content.decode()
@@ -361,8 +357,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     if ugc.send_cmdr == 1:
         ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     else:
-        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
-    print(type(entry))
+        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}    
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
