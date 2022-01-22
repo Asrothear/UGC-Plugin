@@ -27,7 +27,7 @@ class _config:
     STATE_URL = 'http://api.ugc-tools.de/api/v1/State'
     TICK = 'http://api.ugc-tools.de/api/v1/Tick'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
-    __VERSION__ = 3.0 # DONT TOUCH ME !!
+    __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
     __BRANCH__ = "beta"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
@@ -51,7 +51,7 @@ class _config:
     send_cmdr_cfg = None
     verify_token = ""
 ugc = _config()
-ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
+ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__, "cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
 #####################################################################################################
 ############################ V !! New Logging function !! V #########################################
 ######################## V !! NEVER EVER CHANGE ANY OF THIS !! V ####################################
@@ -94,20 +94,18 @@ def plugin_start(plugin_dir):
         ugc_log.debug(str(ugc.wurl))
         ugc_log.debug(str(ugc.cmd))
         ugc_log.debug(str(ugc.tick))
-    
-    fetch_show_all()
-    get_sys_state()
-
     if config.get_str("ugc_cmdr"):
         ugc.CMDr = config.get_str("ugc_cmdr")
         crypter()
+    fetch_show_all()
+    get_sys_state()
     return ("UGC-Plugin")
 
 def crypter():
     if not ugc.hwID:
             ugc.hwID = ugc.Crypt.ghwid()
     if not ugc.UUID:
-            ugc.UUID = ugc.Crypt.muuid(ugc.CMDr,ugc.hwID)
+            ugc.UUID = str(ugc.Crypt.muuid(ugc.CMDr,ugc.hwID)).replace("'","|")
     if not config.get_str("ugc_token"):
         config.set("ugc_token", ugc.Crypt.sign(ugc.CMDr,ugc.hwID))
         ugc.Hash = config.get_str("ugc_token")
@@ -151,10 +149,7 @@ def plugin_prefs(parent, cmdr, is_beta):
         config.set("ugc_cmdr", cmdr)
         ugc.CMDr = cmdr
         crypter()
-    if ugc.send_cmdr == 1:
-        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
-    else:
-        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
@@ -205,11 +200,7 @@ def prefs_changed(cmdr, is_beta):
     ugc.verify_token = ugc.vtk_cfg.get().strip()
     fetch_debug()
     fetch_send_cmdr()
-    if ugc.send_cmdr:
-        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
-    else:
-        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
-    
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash} 
     fetch_show_all()
     get_sys_state()
     updateMainUi()
@@ -309,9 +300,9 @@ def fetch_show_all():
 
 def get_sys_state():
     ugc.rurl = config.get_str("ugc_rurl")
-    sys_state = requests.get(ugc.rurl, params=ugc.paras)
+    sys_state = requests.get(ugc.rurl, headers=ugc.paras, verify=False)
     if(sys_state.status_code > 202):
-        updateMainUi(tick_color="red", systems_color="orange")
+        updateMainUi(tick_color="white", systems_color="red")
     jsonstring = sys_state.content.decode()
     systemlist = json.loads(jsonstring)
     if ugc.show_all.get():
@@ -323,7 +314,7 @@ def get_sys_state():
 def get_ugc_tick():
     tick = requests.get(ugc.TICK, verify=False)
     if(tick.status_code > 202):
-        updateMainUi(tick_color="orange", systems_color="red")
+        updateMainUi(tick_color="white", systems_color="red")
     ugc.tick = tick.content.decode()
     ugc.tick = json.loads(ugc.tick)
     ugc.tick   = pprint_list(ugc.tick)
@@ -354,10 +345,7 @@ def plugin_update():
         auto_updater.extract_latest()
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-    if ugc.send_cmdr == 1:
-        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
-    else:
-        ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}    
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
@@ -370,7 +358,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         data['user'] = cmdr
 
     data["ugc_token_v2"] = dict()
-    data["ugc_token_v2"]["uuid"] = str(ugc.UUID).replace("'","|")
+    data["ugc_token_v2"]["uuid"] = ugc.UUID
     data["ugc_token_v2"]["token"] = ugc.Hash
     data["ugc_token_v2"]["verify"] = ugc.verify_token
     data['ugc_p_version'] = ugc.__VERSION__
@@ -405,6 +393,7 @@ def cmdr_data(data, is_beta):
         crypter()
 
 def send_test():
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
     if ugc.verify_token =="":
         if ugc.vtk_cfg.get().strip() !="":
             ugc.verify_token = ugc.vtk_cfg.get().strip()
@@ -418,7 +407,7 @@ def send_test():
     updateMainUi(systems_color="orange")
     data["event"] = "test"
     data["ugc_token_v2"] = dict()
-    data["ugc_token_v2"]["uuid"] = str(ugc.UUID).replace("'","|")
+    data["ugc_token_v2"]["uuid"] = ugc.UUID
     data["ugc_token_v2"]["token"] = ugc.Hash
     data["ugc_token_v2"]["verify"] = ugc.verify_token
     
