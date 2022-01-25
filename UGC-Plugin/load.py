@@ -305,12 +305,11 @@ def get_sys_state():
     print(type(sys_state))
     if(sys_state.status_code > 202):
         print("W")
-        updateMainUi(tick_color="white", systems_color="red")    
-        if(sys_state.status_code > 405):
-            ugc.sys_state="API-Server ERROR"
-            return(ugc.sys_state)
+        updateMainUi(tick_color="white", systems_color="red")
     jsonstring = sys_state.content.decode()
     systemlist = json.loads(jsonstring)
+    if(sys_state.status_code > 405):
+            systemlist=["API-Server ERROR"]
     if ugc.show_all.get():
         ugc.sys_state   = pprint_list(systemlist)
     else:
