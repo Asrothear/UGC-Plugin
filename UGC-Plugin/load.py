@@ -29,7 +29,7 @@ class _config:
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
     __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
-    __BRANCH__ = "beta"# DONT TOUCH ME !!
+    __BRANCH__ = "rel"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
@@ -301,8 +301,14 @@ def fetch_show_all():
 def get_sys_state():
     ugc.rurl = config.get_str("ugc_rurl")
     sys_state = requests.get(ugc.rurl, headers=ugc.paras, verify=False)
+    print(sys_state)
+    print(type(sys_state))
     if(sys_state.status_code > 202):
-        updateMainUi(tick_color="white", systems_color="red")
+        print("W")
+        updateMainUi(tick_color="white", systems_color="red")    
+        if(sys_state.status_code > 405):
+            ugc.sys_state="API-Server ERROR"
+            return(ugc.sys_state)
     jsonstring = sys_state.content.decode()
     systemlist = json.loads(jsonstring)
     if ugc.show_all.get():

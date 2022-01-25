@@ -19,5 +19,8 @@ class ugc_crypt(object):
         _uuid = uuid.uuid5(uuid.NAMESPACE_OID, cmdr + hwID)
         return _uuid.bytes
     def ghwid(self):
-        hwID = str(uuid.UUID(int=uuid.getnode()).hex)
+        if 'nt' in os.name:
+            hwID = str(subprocess.check_output('wmic csproduct get uuid'), 'utf-8').split('\n')[1].strip()
+        else:
+            hwID = str("HwID-for-Mac-an-Linux-Systems-(WIP)")
         return hwID
