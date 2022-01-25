@@ -11,9 +11,11 @@ from pathlib import Path
 import myNotebook as nb
 import requests
 import json
-import logging
+import logging as logs
+import os
 import os.path
 import ugc_updater
+import ugc_crypt
 from config import config
 from requests.utils import DEFAULT_CA_BUNDLE_PATH
 from dataclasses import dataclass
@@ -21,13 +23,13 @@ from dataclasses import dataclass
 ######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
 @dataclass
 class _config:
-    SEND_TO_URL = 'https://ugc-plugin.ugc-tools.de/qls.php'
-    STATE_URL = 'https://ugc-plugin.ugc-tools.de/api_state.php'
-    TICK = 'https://ugc-plugin.ugc-tools.de/api_tick.php'
+    SEND_TO_URL = 'http://api.ugc-tools.de/api/v1/QLS'
+    STATE_URL = 'http://api.ugc-tools.de/api/v1/State'
+    TICK = 'http://api.ugc-tools.de/api/v1/Tick'
     G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
-    __VERSION__ = 2.1 # DONT TOUCH ME !!
-    __MINOR__ = "6" # DONT TOUCH ME !!
-    __BRANCH__ = "rel"# DONT TOUCH ME !!
+    __VERSION__ = "3.0" # DONT TOUCH ME !!
+    __MINOR__ = "0" # DONT TOUCH ME !!
+    __BRANCH__ = "beta"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
@@ -40,24 +42,31 @@ class _config:
     cmd = None
     update = None
     update_cfg = None
-
+    CMDr = None
+    Hash = None
+    UUID = None
+    Crypt = None
+    hwID = None
+    send_cmdr = None
+    send_cmdr_cfg = None
+    verify_token = ""
 ugc = _config()
-ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__}
+ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__, "cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
 #####################################################################################################
 ############################ V !! New Logging function !! V #########################################
 ######################## V !! NEVER EVER CHANGE ANY OF THIS !! V ####################################
 #####################################################################################################
-ugc_log = logging.getLogger(f'{ugc.plugin_name}')
+ugc_log = logs.getLogger(f'{ugc.plugin_name}')
 if not ugc_log.hasHandlers():
-    level = logging.DEBUG
+    level = logs.DEBUG
     ugc_log.setLevel(level)
-    logger_channel = logging.StreamHandler()
-    logger_channel.setLevel(level)
-    logger_formatter = logging.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logger_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
-    logger_formatter.default_msec_format = '%s.%03d'
-    logger_channel.setFormatter(logger_formatter)
-    ugc_log.addHandler(logger_channel)
+    ugc_log_channel = logs.StreamHandler()
+    ugc_log_channel.setLevel(level)
+    ugc_log_formatter = logs.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ugc_log_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
+    ugc_log_formatter.default_msec_format = '%s.%03d'
+    ugc_log_channel.setFormatter(ugc_log_formatter)
+    ugc_log.addHandler(ugc_log_channel)
     #ugc_log.debug("debug") #Seems to works only on EDMC Debug mode
     #ugc_log.warning("Stawarningrting")
     #ugc_log.error("error")
@@ -66,11 +75,13 @@ if not ugc_log.hasHandlers():
 
 def plugin_start(plugin_dir):
     ugc_log.info(""+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__))
+    ugc.Crypt = ugc_crypt.ugc_crypt()
     fetch_debug()
     ugc_log.debug(str(ugc.debug))
     fetch_gl_cmd()
     fetch_update()
     get_ugc_tick()
+    fetch_send_cmdr()
     ugc.plugin_dir = plugin_dir
     if not config.get_str("ugc_wurl"):
         config.set("ugc_wurl", ugc.SEND_TO_URL)
@@ -83,8 +94,29 @@ def plugin_start(plugin_dir):
         ugc_log.debug(str(ugc.wurl))
         ugc_log.debug(str(ugc.cmd))
         ugc_log.debug(str(ugc.tick))
+    if config.get_str("ugc_cmdr"):
+        ugc.CMDr = config.get_str("ugc_cmdr")
+        crypter()
+    fetch_show_all()
     get_sys_state()
     return ("UGC-Plugin")
+
+def crypter():
+    if not ugc.hwID:
+            ugc.hwID = ugc.Crypt.ghwid()
+    if not ugc.UUID:
+            ugc.UUID = str(ugc.Crypt.muuid(ugc.CMDr,ugc.hwID)).replace("'","|")
+    if not config.get_str("ugc_token"):
+        config.set("ugc_token", ugc.Crypt.sign(ugc.CMDr,ugc.hwID))
+        ugc.Hash = config.get_str("ugc_token")
+    else:
+        ugc.Hash = config.get_str("ugc_token")
+    if ugc.debug:
+        ugc_log.info(ugc.CMDr)
+        ugc_log.info(ugc.UUID)
+        ugc_log.info(ugc.Hash)
+    if not ugc.Crypt.verify(ugc.CMDr, ugc.Hash):
+        ugc.Hash = ugc.Crypt.sign(ugc.CMDr,ugc.hwID)
 
 def fetch_gl_cmd():
     r_cmd = requests.get(ugc.G_CMD)
@@ -113,7 +145,11 @@ def plugin_stop():
         plugin_update()
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
-    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    if not config.get_str("ugc_cmdr"):
+        config.set("ugc_cmdr", cmdr)
+        ugc.CMDr = cmdr
+        crypter()
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
@@ -132,7 +168,14 @@ def plugin_prefs(parent, cmdr, is_beta):
     ugc.rurl_cfg = nb.Entry(frame)
     ugc.rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
     ugc.rurl_cfg.insert(0,ugc.rurl)
+    #Config Entry for Verify-Token
+    ugc.vtk_label = nb.Label(frame, text="Verify Token")
+    ugc.vtk_label.grid(row=13, padx=PADX, sticky=tk.W)
+    ugc.vtk_cfg = nb.Entry(frame)
+    ugc.vtk_cfg.grid(row=13, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+    ugc.vtk_cfg.insert(0,"")
     #config interface
+    nb.Checkbutton(frame, text="CMDr Namen übertragen", variable=ugc.send_cmdr_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Alle Zeigen", variable=ugc.show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Auto Update", variable=ugc.update_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Debug", variable=ugc.debug_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
@@ -142,16 +185,23 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="White: Idle").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Red: Error").grid(columnspan=2, padx=5, pady=(0,0))
     nb.Label(frame, text="Version: "+str(ugc.__VERSION__)+"."+ugc.__MINOR__+" "+str(ugc.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Label(frame, text="CMDr: "+str(cmdr)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    
+    nb.Button(frame, text="Test", command=lambda:send_test()).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 #store config
 def prefs_changed(cmdr, is_beta):
-    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
     config.set('ugc_wurl', ugc.wurl_cfg.get().strip())
     config.set('ugc_rurl', ugc.rurl_cfg.get().strip())
     config.set('ugc_debug', ugc.debug_cfg.get())
     config.set('ugc_update', ugc.update_cfg.get())
     config.set('ugc_show_all', ugc.show_all.get())
+    config.set('ugc_send_cmdr', ugc.send_cmdr_cfg.get())
+    ugc.verify_token = ugc.vtk_cfg.get().strip()
     fetch_debug()
+    fetch_send_cmdr()
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash} 
+    fetch_show_all()
     get_sys_state()
     updateMainUi()
 
@@ -184,6 +234,20 @@ def fetch_debug():
         ugc.debug = False
     
     return(ugc.debug)
+
+def fetch_send_cmdr():
+    ugc.send_cmdr_cfg = tk.IntVar(value=config.get_int("ugc_send_cmdr_first"))
+    ugc.send_cmdr = ugc.send_cmdr_cfg.get()
+    if ugc.send_cmdr == 0:
+        config.set("ugc_send_cmdr_first", 1)
+        config.set("ugc_send_cmdr", 1)
+    ugc.send_cmdr_cfg = tk.IntVar(value=config.get_int("ugc_send_cmdr"))
+    ugc.send_cmdr = ugc.send_cmdr_cfg.get()
+    if ugc.send_cmdr == 1:
+        ugc.send_cmdr = True
+    else:
+        ugc.send_cmdr = False
+    return(ugc.send_cmdr)
 
 def fetch_update():
     ugc.update_cfg = tk.IntVar(value=config.get_int("ugc_update_first"))
@@ -235,11 +299,10 @@ def fetch_show_all():
     return(ugc.show_all)
 
 def get_sys_state():
-    fetch_show_all()
     ugc.rurl = config.get_str("ugc_rurl")
-    sys_state = requests.get(ugc.rurl, params=ugc.paras)
+    sys_state = requests.get(ugc.rurl, headers=ugc.paras, verify=False)
     if(sys_state.status_code > 202):
-        updateMainUi(tick_color="red", systems_color="orange")
+        updateMainUi(tick_color="white", systems_color="red")
     jsonstring = sys_state.content.decode()
     systemlist = json.loads(jsonstring)
     if ugc.show_all.get():
@@ -249,9 +312,9 @@ def get_sys_state():
     return(ugc.sys_state)
 
 def get_ugc_tick():
-    tick = requests.get(ugc.TICK)
+    tick = requests.get(ugc.TICK, verify=False)
     if(tick.status_code > 202):
-        updateMainUi(tick_color="orange", systems_color="red")
+        updateMainUi(tick_color="white", systems_color="red")
     ugc.tick = tick.content.decode()
     ugc.tick = json.loads(ugc.tick)
     ugc.tick   = pprint_list(ugc.tick)
@@ -282,7 +345,7 @@ def plugin_update():
         auto_updater.extract_latest()
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-    ugc.paras = {'pv':ugc.__VERSION__, "br":ugc.__MINOR__+" "+ugc.__BRANCH__, "user":cmdr}
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
@@ -291,11 +354,16 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             data = json.loads(m_data)
             if ugc.debug:
                 ugc_log.debug(data)
-    data['user'] = cmdr
+    if ugc.send_cmdr == 1:
+        data['user'] = cmdr
+
+    data["ugc_token_v2"] = dict()
+    data["ugc_token_v2"]["uuid"] = ugc.UUID
+    data["ugc_token_v2"]["token"] = ugc.Hash
+    data["ugc_token_v2"]["verify"] = ugc.verify_token
     data['ugc_p_version'] = ugc.__VERSION__
     data['ugc_p_minor'] = ugc.__MINOR__
     data['ugc_p_branch'] = ugc.__BRANCH__
-    data['data_system'] = system
     
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(data).encode('utf-8')
@@ -304,7 +372,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         ugc_log.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         ugc_log.debug("UGC-DEBUG: start req...")
         ugc_log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
-    response = requests.post(ugc.wurl, data=jsonString, headers=headers)
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
 
     if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
@@ -315,3 +383,50 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     else:
         updateMainUi(tick_color="red", systems_color="red")
 
+def cmdr_data(data, is_beta):
+    if data.get('commander') is None or data['commander'].get('name') is None:
+        raise ValueError("this isn't possible")
+    CMDr = data['commander']['name']
+    if not config.get_str("ugc_cmdr"):
+        config.set("ugc_cmdr", CMDr)
+        ugc.CMDr = CMDr
+        crypter()
+
+def send_test():
+    ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
+    if ugc.verify_token =="":
+        if ugc.vtk_cfg.get().strip() !="":
+            ugc.verify_token = ugc.vtk_cfg.get().strip()
+    data = dict()
+    config.set('ugc_wurl', ugc.wurl_cfg.get().strip())
+    config.set('ugc_rurl', ugc.rurl_cfg.get().strip())
+    ugc.wurl = config.get_str("ugc_wurl")
+    ugc.rurl = config.get_str("ugc_rurl")
+    if ugc.send_cmdr == 1:
+        data['user'] = ugc.CMDr
+    updateMainUi(systems_color="orange")
+    data["event"] = "test"
+    data["ugc_token_v2"] = dict()
+    data["ugc_token_v2"]["uuid"] = ugc.UUID
+    data["ugc_token_v2"]["token"] = ugc.Hash
+    data["ugc_token_v2"]["verify"] = ugc.verify_token
+    
+    data['ugc_p_version'] = ugc.__VERSION__
+    data['ugc_p_minor'] = ugc.__MINOR__
+    data['ugc_p_branch'] = ugc.__BRANCH__
+    data['payload'] = "bärenkatapult"
+    
+    headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
+    jsonString = json.dumps(data).encode('utf-8')
+
+    ugc_log.debug("UGC-DEBUG:TEST start req...")
+    ugc_log.debug("UGC-DEBUG:TEST JSON: "+ str(jsonString))
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
+    if ugc.debug:
+        ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
+        ugc_log.debug("UGC-DEBUG: "+ugc.sys_state)
+    get_sys_state()
+    if(response.status_code <= 202):
+        updateMainUi(tick_color="white", systems_color="white")
+    else:
+        updateMainUi(tick_color="red", systems_color="red")

@@ -48,7 +48,7 @@ class ugc_updater(object):
         files = [os.path.join(ugc_updater.BACKUP, f) for f in files]
         files.sort(key=lambda x: os.path.getctime(x))
         nbfiles = len(files)
-        max_backups = 5
+        max_backups = 2
         for i in range(0, nbfiles - max_backups):
             f = files[i]
             os.unlink(f)
