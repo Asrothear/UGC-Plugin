@@ -26,7 +26,7 @@ class _config:
     SEND_TO_URL = 'http://api.ugc-tools.de/api/v1/QLS'
     STATE_URL = 'http://api.ugc-tools.de/api/v1/State'
     TICK = 'http://api.ugc-tools.de/api/v1/Tick'
-    G_CMD = 'https://ugc-plugin.ugc-tools.de/plugin.php'
+    G_CMD = 'http://api.ugc-tools.de/api/v1/PluginControll'
     __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
     __BRANCH__ = "rel"# DONT TOUCH ME !!
