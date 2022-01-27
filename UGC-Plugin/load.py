@@ -29,7 +29,7 @@ class _config:
     G_CMD = 'http://api.ugc-tools.de/api/v1/PluginControll'
     __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
-    __BRANCH__ = "rel"# DONT TOUCH ME !!
+    __BRANCH__ = "rel.2"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
