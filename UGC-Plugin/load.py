@@ -29,7 +29,7 @@ class _config:
     G_CMD = 'http://api.ugc-tools.de/api/v1/PluginControll'
     __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
-    __BRANCH__ = "rel.2"# DONT TOUCH ME !!
+    __BRANCH__ = "rel.3"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
@@ -301,28 +301,32 @@ def fetch_show_all():
 def get_sys_state():
     ugc.rurl = config.get_str("ugc_rurl")
     sys_state = requests.get(ugc.rurl, headers=ugc.paras, verify=False)
-    print(sys_state)
-    print(type(sys_state))
     if(sys_state.status_code > 202):
-        print("W")
-        updateMainUi(tick_color="white", systems_color="red")
-    jsonstring = sys_state.content.decode()
-    systemlist = json.loads(jsonstring)
+        try:
+            updateMainUi(tick_color="white", systems_color="red")
+        except:
+            print("BGS-Plugin")
     if(sys_state.status_code > 405):
-            systemlist=["API-Server ERROR"]
-    if ugc.show_all.get():
-        ugc.sys_state   = pprint_list(systemlist)
-    else:
-        ugc.sys_state = pprint_list(systemlist[0])
+        ugc.sys_state = "API-Server ERROR"
+    else:        
+        jsonstring = sys_state.content.decode()
+        systemlist = json.loads(jsonstring)
+        if ugc.show_all.get():
+            ugc.sys_state   = pprint_list(systemlist)
+        else:
+            ugc.sys_state = pprint_list(systemlist[0])
     return(ugc.sys_state)
 
 def get_ugc_tick():
     tick = requests.get(ugc.TICK, verify=False)
     if(tick.status_code > 202):
         updateMainUi(tick_color="white", systems_color="red")
-    ugc.tick = tick.content.decode()
-    ugc.tick = json.loads(ugc.tick)
-    ugc.tick   = pprint_list(ugc.tick)
+    if(tick.status_code > 405):
+        ugc.tick = "API-Server ERROR"
+    else: 
+        ugc.tick = tick.content.decode()
+        ugc.tick = json.loads(ugc.tick)
+        ugc.tick   = pprint_list(ugc.tick)
     return(ugc.tick)
 #
 def updateMainUi(tick_color="orange", systems_color="orange"):
