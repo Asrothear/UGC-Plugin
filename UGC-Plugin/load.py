@@ -301,13 +301,11 @@ def fetch_show_all():
 def get_sys_state():
     ugc.rurl = config.get_str("ugc_rurl")
     sys_state = requests.get(ugc.rurl, headers=ugc.paras, verify=False)
-    print(sys_state)
-    print(type(sys_state))
     if(sys_state.status_code > 202):
         try:
             updateMainUi(tick_color="white", systems_color="red")
         except:
-
+            print("BGS-Plugin")
     if(sys_state.status_code > 405):
         ugc.sys_state = "API-Server ERROR"
     else:        
@@ -323,7 +321,7 @@ def get_ugc_tick():
     tick = requests.get(ugc.TICK, verify=False)
     if(tick.status_code > 202):
         updateMainUi(tick_color="white", systems_color="red")
-    if(sys_state.status_code > 405):
+    if(tick.status_code > 405):
         ugc.tick = "API-Server ERROR"
     else: 
         ugc.tick = tick.content.decode()
