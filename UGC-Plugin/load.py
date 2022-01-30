@@ -23,10 +23,10 @@ from dataclasses import dataclass
 ######################## V !! DO NOT CHANGE ANY OF THIS !! V ########################################
 @dataclass
 class _config:
-    SEND_TO_URL = 'http://api.ugc-tools.de/api/v1/QLS'
-    STATE_URL = 'http://api.ugc-tools.de/api/v1/State'
-    TICK = 'http://api.ugc-tools.de/api/v1/Tick'
-    G_CMD = 'http://api.ugc-tools.de/api/v1/PluginControll'
+    SEND_TO_URL = 'https://api.ugc-tools.de/api/v1/QLS'
+    STATE_URL = 'https://api.ugc-tools.de/api/v1/State'
+    TICK = 'https://api.ugc-tools.de/api/v1/Tick'
+    G_CMD = 'https://api.ugc-tools.de/api/v1/PluginControll'
     __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
     __BRANCH__ = "rel.3"# DONT TOUCH ME !!
@@ -300,7 +300,7 @@ def fetch_show_all():
 
 def get_sys_state():
     ugc.rurl = config.get_str("ugc_rurl")
-    sys_state = requests.get(ugc.rurl, headers=ugc.paras, verify=False)
+    sys_state = requests.get(ugc.rurl, headers=ugc.paras)
     if(sys_state.status_code > 202):
         try:
             updateMainUi(tick_color="white", systems_color="red")
@@ -318,7 +318,7 @@ def get_sys_state():
     return(ugc.sys_state)
 
 def get_ugc_tick():
-    tick = requests.get(ugc.TICK, verify=False)
+    tick = requests.get(ugc.TICK)
     if(tick.status_code > 202):
         updateMainUi(tick_color="white", systems_color="red")
     if(tick.status_code > 405):
@@ -381,7 +381,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         ugc_log.debug("UGC-DEBUG: PATH: "+DEFAULT_CA_BUNDLE_PATH)
         ugc_log.debug("UGC-DEBUG: start req...")
         ugc_log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
-    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers)
 
     if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
@@ -430,7 +430,7 @@ def send_test():
 
     ugc_log.debug("UGC-DEBUG:TEST start req...")
     ugc_log.debug("UGC-DEBUG:TEST JSON: "+ str(jsonString))
-    response = requests.post(ugc.wurl, data=jsonString, headers=headers, verify=False)
+    response = requests.post(ugc.wurl, data=jsonString, headers=headers)
     if ugc.debug:
         ugc_log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         ugc_log.debug("UGC-DEBUG: "+ugc.sys_state)
