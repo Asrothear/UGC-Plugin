@@ -29,7 +29,7 @@ class _config:
     G_CMD = 'https://api.ugc-tools.de/api/v1/PluginControll'
     __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
-    __BRANCH__ = "rel.3"# DONT TOUCH ME !!
+    __BRANCH__ = "rel.4"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
@@ -95,7 +95,7 @@ def plugin_start(plugin_dir):
         ugc_log.debug(str(ugc.cmd))
         ugc_log.debug(str(ugc.tick))
     if config.get_str("ugc_cmdr"):
-        ugc.CMDr = config.get_str("ugc_cmdr")
+        ugc.CMDr = config.get_str("ugc_cmdr").encode("ascii","replace").decode()
         crypter()
     fetch_show_all()
     get_sys_state()
@@ -146,8 +146,8 @@ def plugin_stop():
 # plugin prefs
 def plugin_prefs(parent, cmdr, is_beta):
     if not config.get_str("ugc_cmdr"):
-        config.set("ugc_cmdr", cmdr)
-        ugc.CMDr = cmdr
+        config.set("ugc_cmdr", cmdr.encode("ascii","replace").decode())
+        ugc.CMDr = config.get_str("ugc_cmdr")
         crypter()
     ugc.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':ugc.__VERSION__, "br":ugc.__MINOR__,"branch":ugc.__BRANCH__,"cmdr":str(ugc.send_cmdr), "uuid":ugc.UUID, "token":ugc.Hash}
     PADX = 10
@@ -397,8 +397,8 @@ def cmdr_data(data, is_beta):
         raise ValueError("this isn't possible")
     CMDr = data['commander']['name']
     if not config.get_str("ugc_cmdr"):
-        config.set("ugc_cmdr", CMDr)
-        ugc.CMDr = CMDr
+        config.set("ugc_cmdr", CMDr.encode("ascii","replace").decode())
+        ugc.CMDr = config.get_str("ugc_cmdr")
         crypter()
 
 def send_test():
