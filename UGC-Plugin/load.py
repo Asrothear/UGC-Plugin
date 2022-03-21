@@ -29,7 +29,7 @@ class _config:
     G_CMD = 'https://api.ugc-tools.de/api/v1/PluginControll'
     __VERSION__ = "3.0" # DONT TOUCH ME !!
     __MINOR__ = "0" # DONT TOUCH ME !!
-    __BRANCH__ = "rel.4"# DONT TOUCH ME !!
+    __BRANCH__ = "rel.5"# DONT TOUCH ME !!
     CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
     HOME = str(Path.home()).replace("\\", "/")
     plugin_name = os.path.basename(os.path.dirname(__file__))
@@ -47,6 +47,8 @@ class _config:
     UUID = None
     Crypt = None
     hwID = None
+    tick = ""
+    sys_state = ""
     send_cmdr = None
     send_cmdr_cfg = None
     verify_token = ""
@@ -119,7 +121,10 @@ def crypter():
         ugc.Hash = ugc.Crypt.sign(ugc.CMDr,ugc.hwID)
 
 def fetch_gl_cmd():
-    r_cmd = requests.get(ugc.G_CMD)
+    try:
+        r_cmd = requests.get(ugc.G_CMD)
+    except:
+        return
     if(r_cmd.status_code > 202):
         updateMainUi(tick_color="red", systems_color="red")
     ugc.cmd = r_cmd.content.decode()
@@ -300,7 +305,12 @@ def fetch_show_all():
 
 def get_sys_state():
     ugc.rurl = config.get_str("ugc_rurl")
-    sys_state = requests.get(ugc.rurl, headers=ugc.paras)
+    try:
+        sys_state = requests.get(ugc.rurl, headers=ugc.paras)
+    except:
+        if(ugc.sys_state ==""):
+            ugc.sys_state = "API-Server ERROR"
+        return(ugc.sys_state)
     if(sys_state.status_code > 202):
         try:
             updateMainUi(tick_color="white", systems_color="red")
@@ -317,8 +327,13 @@ def get_sys_state():
             ugc.sys_state = pprint_list(systemlist[0])
     return(ugc.sys_state)
 
-def get_ugc_tick():
-    tick = requests.get(ugc.TICK)
+def get_ugc_tick():    
+    try:
+        tick = requests.get(ugc.TICK)
+    except:
+        if(ugc.tick ==""):
+            ugc.tick = "API-Server ERROR"
+        return(ugc.tick)
     if(tick.status_code > 202):
         updateMainUi(tick_color="white", systems_color="red")
     if(tick.status_code > 405):
@@ -337,6 +352,8 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     ugc.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
     ugc.widget_tick_value["text"] = ugc.tick
     ugc.widget_tick_value["foreground"] = tick_color
+    #ugc.widget_tick_label["background"] = "black"
+    #ugc.widget_tick_value["background"] = "black"
 
     # List systems
     ugc.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
@@ -344,6 +361,8 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     ugc.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
     ugc.widget_systems_value["text"] = ugc.sys_state
     ugc.widget_systems_value["foreground"] = systems_color
+    #ugc.widget_systems_label["background"] = "black"
+    #ugc.widget_systems_value["background"] = "black"
 #
 def plugin_update():
     auto_updater = ugc_updater.ugc_updater()
