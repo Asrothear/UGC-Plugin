@@ -134,6 +134,10 @@ def plugin_stop() -> None:
     this.thread = None
     this.session.close()
     this.log.debug('Done.')
+    if this.update:
+        if this.debug:
+            this.log.debug("Updating on close")
+        plugin_update()
 
 def plugin_app(parent):
     frame = tk.Frame(parent)
@@ -267,7 +271,7 @@ def fetch_update():
             this.log.debug("Updating")
         config.set("ugc_update_first", 1)
         config.set("ugc_update", 1)
-        #plugin_update()
+        plugin_update()
     this.update_cfg = tk.IntVar(value=config.get_int("ugc_update"))
     this.update = this.update_cfg.get()
     if this.update == 1:
@@ -275,6 +279,14 @@ def fetch_update():
     else:
         this.update = False
     return(this.update)
+
+def plugin_update():
+    auto_updater = ugc_updater.ugc_updater()
+    downloaded = auto_updater.download_latest()
+    if downloaded:
+        auto_updater.make_backup()
+        auto_updater.clean_old_backups()
+        auto_updater.extract_latest()
 
 def fetch_show_all():
     this.show_all = tk.IntVar(value=config.get_int("ugc_show_all"))
@@ -440,8 +452,8 @@ def QLS(cmdr, is_beta, system, station, entry, state):
     data['ugc_p_branch'] = this.__BRANCH__
     
     headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
-    jsonString = json.dumps(data).encode('utf-8')
-
+    jsonString = json.dumps(data)
+    jsonString = jsonString.replace("'","").encode('utf-8')
     if this.debug:
         this.log.debug("UGC-DEBUG: PATH: ")
         this.log.debug("UGC-DEBUG: start req...")
