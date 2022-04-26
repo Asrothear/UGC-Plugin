@@ -26,7 +26,7 @@ class This:
         self.TICK = 'https://api.ugc-tools.de/api/v1/Tick'
         self.G_CMD = 'https://api.ugc-tools.de/api/v1/PluginControll'
         self.__VERSION__ = "3.0" # DONT TOUCH ME !!
-        self.__MINOR__ = "0" # DONT TOUCH ME !!
+        self.__MINOR__ = "1" # DONT TOUCH ME !!
         self.__BRANCH__ = "ThreadSafe rel.1"# DONT TOUCH ME !!
         self.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
         self.HOME = str(Path.home()).replace("\\", "/")
@@ -385,11 +385,12 @@ def worker () -> None:
     if this.shutting_down:
             this.log.debug(f'{this.shutting_down=}, so setting closing = True')
             closing = True
-    sleep(5)
+    sleep(20)
+    get_sys_state()
     #updateMainUi()
     if closing:
         return
-    return
+    
     #this.thread.run()
 
 def get_sys_state():
