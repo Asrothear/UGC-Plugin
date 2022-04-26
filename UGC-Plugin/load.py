@@ -47,6 +47,8 @@ class This:
         self.lastlookup: requests.Response  # Result of last system lookup
         self.plugin_name = os.path.basename(os.path.dirname(__file__))
         self.Crypt = ugc_crypt.ugc_crypt()
+        #
+        self.first = True
         # Game state
         self.multicrew: bool = False  # don't send captain's ship info to EDSM while on a crew
         self.coordinates: Optional[Tuple[int, int, int]] = None
@@ -387,6 +389,9 @@ def worker () -> None:
             closing = True
     get_sys_state()    
     sleep(20)
+    if(this.first):        
+        this.first = False
+        updateMainUi(systems_color="green")
     #updateMainUi()
     if closing:
         return
