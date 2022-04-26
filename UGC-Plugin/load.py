@@ -385,11 +385,12 @@ def worker () -> None:
     if this.shutting_down:
             this.log.debug(f'{this.shutting_down=}, so setting closing = True')
             closing = True
+    get_sys_state()    
     sleep(20)
-    get_sys_state()
     #updateMainUi()
     if closing:
         return
+    this.thread.run()
     
     #this.thread.run()
 
