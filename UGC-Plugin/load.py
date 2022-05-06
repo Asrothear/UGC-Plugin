@@ -33,12 +33,16 @@ class This:
         self.send_cmdr_cfg = None
         self.send_cmdr = None
         self.show_all = None
+        self.show_all_cfg = None
+        self.show_all_bgs_cfg = None
+        self.show_all_bgs = None
         self.update_cfg = None
         self.update = None
         self.debug_cfg = None
         self.debug = None
         self.shutting_down = False
         self.sys_state = "Start Up"
+        self.sys_state_data = None
         self.tick = "Start Up"
         self.vtk_cfg = None
         #
@@ -182,7 +186,7 @@ def plugin_prefs(parent, cmdr, is_beta):
         config.set("ugc_cmdr", cmdr.encode("ascii","replace").decode())
         this.CMDr = config.get_str("ugc_cmdr")
         crypter()
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash}
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
@@ -209,7 +213,8 @@ def plugin_prefs(parent, cmdr, is_beta):
     this.vtk_cfg.insert(0,"")
     #config interface
     nb.Checkbutton(frame, text="CMDr Namen übertragen", variable=this.send_cmdr_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
-    nb.Checkbutton(frame, text="Alle Zeigen", variable=this.show_all).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Gesamte Liste Zeigen", variable=this.show_all_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Nur BGS relevante zeigen", variable=this.show_all_bgs_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Auto Update", variable=this.update_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Debug", variable=this.debug_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
@@ -220,7 +225,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="Version: "+str(this.__VERSION__)+"."+this.__MINOR__+" "+str(this.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="CMDr: "+str(cmdr)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     
-    nb.Button(frame, text="Test", command=lambda:send_test()).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Button(frame, text="Test", command=lambda:send_test(cmdr, is_beta)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 
 def prefs_changed(cmdr, is_beta):
@@ -228,15 +233,18 @@ def prefs_changed(cmdr, is_beta):
     config.set('ugc_rurl', this.rurl_cfg.get().strip())
     config.set('ugc_debug', this.debug_cfg.get())
     config.set('ugc_update', this.update_cfg.get())
-    config.set('ugc_show_all', this.show_all.get())
+    config.set('ugc_show_all', this.show_all_cfg.get())
+    config.set('ugc_show_all_bgs', this.show_all_bgs_cfg.get())
     config.set('ugc_send_cmdr', this.send_cmdr_cfg.get())
     this.verify_token = this.vtk_cfg.get().strip()
+    this.rurl = config.get_str("ugc_rurl")
+    this.wurl = config.get_str("ugc_wurl")
     fetch_debug()
     fetch_send_cmdr()
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash} 
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)} 
     fetch_show_all()
     #this.sys_state_Thread.run()
-    updateMainUi()
+    updateMainUi(tick_color="white", systems_color="green")
 
 def fetch_debug():
     this.debug_cfg = tk.IntVar(value=config.get_int("ugc_debug"))
@@ -263,7 +271,7 @@ def fetch_send_cmdr():
         this.send_cmdr = True
     else:
         this.send_cmdr = False
-    return(this.send_cmdr)
+    return()
 
 def fetch_update():
     this.update_cfg = tk.IntVar(value=config.get_int("ugc_update_first"))
@@ -291,11 +299,26 @@ def plugin_update():
         auto_updater.extract_latest()
 
 def fetch_show_all():
-    this.show_all = tk.IntVar(value=config.get_int("ugc_show_all"))
-    this.show_all = this.show_all.get()
+    this.show_all_cfg = tk.IntVar(value=config.get_int("ugc_show_all"))
+    this.show_all = this.show_all_cfg.get()
     config.set("ugc_show_all", this.show_all)
-    this.show_all = tk.IntVar(value=config.get_int("ugc_show_all"))
-    return(this.show_all)
+    this.show_all_cfg = tk.IntVar(value=config.get_int("ugc_show_all"))
+    fetch_show_all_bgs()
+    return()
+
+def fetch_show_all_bgs():
+    first = tk.IntVar(value=config.get_int("ugc_show_all_bgs_first"))
+    first = first.get()
+    if first == 0:
+        config.set("ugc_show_all_bgs_first", 1)
+        config.set("ugc_show_all_bgs", 0)
+    this.show_all_bgs_cfg = tk.IntVar(value=config.get_int("ugc_show_all_bgs"))
+    this.show_all_bgs = this.show_all_bgs_cfg.get()
+    if this.show_all_bgs == 1:
+        this.show_all_bgs = True
+    else:
+        this.show_all_bgs = False
+    return()
 
 def fetch_gl_cmd():
     try:
@@ -335,6 +358,8 @@ def get_ugc_tick():
     return(this.tick)
 
 def pprint_list(liste, maxlen=40):
+    if not (this.show_all_bgs):
+        maxlen = maxlen+8
     if isinstance(liste, str):
         return liste
     if (len(liste) == 0):
@@ -387,38 +412,40 @@ def worker () -> None:
     if this.shutting_down:
             this.log.debug(f'{this.shutting_down=}, so setting closing = True')
             closing = True
-    get_sys_state()    
-    sleep(20)
+    #get_sys_state()
+    sleep(5)
     if(this.first):        
         this.first = False
         updateMainUi(systems_color="green")
     #updateMainUi()
     if closing:
         return
-    this.thread.run()
+    return
     
     #this.thread.run()
 
 def get_sys_state():
     if(this.debug):
         this.log.debug("get_sys_state")
+        this.log.debug("show_all_bgs: "+str(this.show_all_bgs))
     this.rurl = config.get_str("ugc_rurl")
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
     try:
-        sys_state = requests.get(this.rurl, headers=this.paras)
+        sys_state_data = requests.get(this.rurl, headers=this.paras)
     except:
-        if(this.sys_state ==""):
-            this.sys_state = "API-Server ERROR"
-    if(sys_state.status_code > 202):
+        this.sys_state = "API-Server ERROR"
+        return
+    if(sys_state_data.status_code > 202):
         try:
             updateMainUi(tick_color="white", systems_color="red")
         except:
             print("BGS-Plugin")
-    if(sys_state.status_code > 405):
+    if(sys_state_data.status_code > 405):
         this.sys_state = "API-Server ERROR"
     else:        
-        jsonstring = sys_state.content.decode()
+        jsonstring = sys_state_data.content.decode()
         systemlist = json.loads(jsonstring)
-        if this.show_all.get():
+        if this.show_all_cfg.get():
             this.sys_state   = pprint_list(systemlist)
         else:
             this.sys_state = pprint_list(systemlist[0])
@@ -435,7 +462,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
 def QLS(cmdr, is_beta, system, station, entry, state):
     if(this.debug):
         this.log.debug("QLS")
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash}
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
@@ -476,23 +503,20 @@ def QLS(cmdr, is_beta, system, station, entry, state):
         updateMainUi(tick_color="red", systems_color="red")
     return
 
-def send_test():
-    thread = Thread(target=send_testth, name='UGC-Test worker')
+def send_test(cmdr, is_beta):
+    thread = Thread(target=send_testth, name='UGC-Test worker', args=(cmdr, is_beta))
     thread.daemon = True
     thread.start()
     return
 
-def send_testth():
+def send_testth(cmdr, is_beta):
+    getconfig()
     this.log.debug("UGC-DEBUG:TEST start req...")
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash}
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
     if this.verify_token =="":
         if this.vtk_cfg.get().strip() !="":
             this.verify_token = this.vtk_cfg.get().strip()
     data = dict()
-    config.set('ugc_wurl', this.wurl_cfg.get().strip())
-    config.set('ugc_rurl', this.rurl_cfg.get().strip())
-    this.wurl = config.get_str("ugc_wurl")
-    this.rurl = config.get_str("ugc_rurl")
     if this.send_cmdr == 1:
         data['user'] = this.CMDr
     updateMainUi(systems_color="orange")
@@ -519,4 +543,33 @@ def send_testth():
         updateMainUi(tick_color="white", systems_color="white")
     else:
         updateMainUi(tick_color="red", systems_color="red")
+    return
+
+def getconfig():
+    config.set('ugc_wurl', this.wurl_cfg.get().strip())
+    config.set('ugc_rurl', this.rurl_cfg.get().strip())
+    config.set('ugc_debug', this.debug_cfg.get())
+    config.set('ugc_update', this.update_cfg.get())
+    config.set('ugc_show_all', this.show_all_cfg.get())
+    config.set('ugc_show_all_bgs', this.show_all_bgs_cfg.get())
+    config.set('ugc_send_cmdr', this.send_cmdr_cfg.get())
+    this.rurl = config.get_str("ugc_rurl")
+    this.wurl = config.get_str("ugc_wurl")    
+    if config.get_int("ugc_show_all_bgs") == 1:
+        this.show_all_bgs = True
+    else:
+        this.show_all_bgs = False
+
+    if config.get_int("ugc_debug") == 1:
+        this.debug = True
+    else:
+        this.debug = False    
+    if config.get_int("ugc_send_cmdr") == 1:
+        this.send_cmdr = True
+    else:
+        this.send_cmdr = False    
+    if config.get_int("ugc_show_all") == 1:
+        this.show_all = True
+    else:
+        this.show_all = False
     return
