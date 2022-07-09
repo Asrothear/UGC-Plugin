@@ -27,7 +27,7 @@ class This:
         self.G_CMD = 'https://api.ugc-tools.de/api/v1/PluginControll'
         self.__VERSION__ = "3.0" # DONT TOUCH ME !!
         self.__MINOR__ = "1" # DONT TOUCH ME !!
-        self.__BRANCH__ = "ThreadSafe rel.1"# DONT TOUCH ME !!
+        self.__BRANCH__ = "TS rel.2"# DONT TOUCH ME !!
         self.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
         self.HOME = str(Path.home()).replace("\\", "/")
         self.send_cmdr_cfg = None
@@ -344,12 +344,14 @@ def get_ugc_tick():
         tick = requests.get(this.TICK)
     except:
         if(this.tick == None):
+            return
             this.tick = "API-Server ERROR"
         return(this.tick)
     if(tick.status_code > 202):
         a = "WIP"
         #updateMainUi(tick_color="white", systems_color="red")
     if(tick.status_code > 405):
+        return
         this.tick = "API-Server ERROR"
     else: 
         this.tick = tick.content.decode()
@@ -424,6 +426,20 @@ def worker () -> None:
     
     #this.thread.run()
 
+def Late_State () -> None:
+    this.log.info("LateState...")
+    sleep(5)
+    get_sys_state()
+    this.log.info("LateState Done!")
+    return
+
+def Fast_State () -> None:
+    this.log.info("FastState...")
+    sleep(1)
+    get_sys_state()
+    this.log.info("FastState Done!")
+    return
+
 def get_sys_state():
     if(this.debug):
         this.log.debug("get_sys_state")
@@ -433,6 +449,7 @@ def get_sys_state():
     try:
         sys_state_data = requests.get(this.rurl, headers=this.paras)
     except:
+        return
         this.sys_state = "API-Server ERROR"
         return
     if(sys_state_data.status_code > 202):
@@ -441,6 +458,7 @@ def get_sys_state():
         except:
             print("BGS-Plugin")
     if(sys_state_data.status_code > 405):
+        return
         this.sys_state = "API-Server ERROR"
     else:        
         jsonstring = sys_state_data.content.decode()
@@ -472,8 +490,13 @@ def QLS(cmdr, is_beta, system, station, entry, state):
             if this.debug:
                 this.log.debug(data)
     if this.send_cmdr == 1:
-        data['user'] = cmdr
-
+        data['user'] = cmdr    
+    get_sys_state()
+    if data['event'] == "FSDJump":
+        dstate = Thread(target=Late_State, name='State-Worker')
+        dstate.daemon = True
+        dstate.start()
+        return
     data["ugc_token_v2"] = dict()
     data["ugc_token_v2"]["uuid"] = this.UUID
     data["ugc_token_v2"]["token"] = this.Hash
@@ -493,7 +516,9 @@ def QLS(cmdr, is_beta, system, station, entry, state):
         this.log.debug("UGC-DEBUG: start req...")
         this.log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
     response = requests.post(this.wurl, data=jsonString, headers=headers)
-    get_sys_state()
+    dstate = Thread(target=Fast_State, name='State-Worker')
+    dstate.daemon = True
+    dstate.start()
     if this.debug:
         this.log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         this.log.debug("UGC-DEBUG: "+this.sys_state)    
