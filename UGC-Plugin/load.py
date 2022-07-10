@@ -41,6 +41,8 @@ class This:
         self.debug_cfg = None
         self.debug = None
         self.shutting_down = False
+        self.slow_state_cfg = None
+        self.slow_state = None
         self.sys_state = "Start Up"
         self.sys_state_data = None
         self.tick = "Start Up"
@@ -68,6 +70,7 @@ class This:
         self.station_marketid: Optional[int] = None  # Frontier MarketID
         self.on_foot = False
         self.thread: Optional[threading.Thread] = None
+        self.dstate: Optional[threading.Thread] = None
         self.get_sys_state: Optional[threading.Thread] = None
         self.QLS: Optional[threading.Thread] = None
 
@@ -105,7 +108,8 @@ def plugin_start3(plugin_dir: str) -> str:
     fetch_gl_cmd()
     fetch_update()
     fetch_send_cmdr()
-    fetch_show_all()    
+    fetch_show_all()
+    fetch_slow_state() 
     get_ugc_tick()
     if not config.get_str("ugc_wurl"):
         config.set("ugc_wurl", this.SEND_TO_URL)
@@ -124,9 +128,11 @@ def plugin_start3(plugin_dir: str) -> str:
     this.thread = Thread(target=worker, name='UGC worker')
     this.thread.daemon = True
     this.thread.start()
-    this.get_sys_state = Thread(target=get_sys_state, name='UGC worker')
-    this.get_sys_state.daemon = True
-    this.get_sys_state.start()
+    get_sys_state()
+    this.dstate = Thread(target=Late_State, name='UGC worker')
+    this.dstate.daemon = True
+    this.dstate.start()
+
     this.log.debug('Done.')
     return this.CONFIG_MAIN
 
@@ -216,6 +222,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Checkbutton(frame, text="Gesamte Liste Zeigen", variable=this.show_all_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Nur BGS relevante zeigen", variable=this.show_all_bgs_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Auto Update", variable=this.update_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Checkbutton(frame, text="Slow State", variable=this.slow_state_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Debug", variable=this.debug_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="Textfarben: ").grid(columnspan=2, padx=5, pady=(2,0), sticky=tk.W)
     nb.Label(frame, text="Green: Start Up").grid(columnspan=2, padx=5, pady=(0,0))
@@ -241,6 +248,7 @@ def prefs_changed(cmdr, is_beta):
     this.wurl = config.get_str("ugc_wurl")
     fetch_debug()
     fetch_send_cmdr()
+    fetch_slow_state()
     this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)} 
     fetch_show_all()
     #this.sys_state_Thread.run()
@@ -255,8 +263,7 @@ def fetch_debug():
     if this.debug == 1:
         this.debug = True
     else:
-        this.debug = False
-    
+        this.debug = False    
     return(this.debug)
 
 def fetch_send_cmdr():
@@ -319,6 +326,18 @@ def fetch_show_all_bgs():
     else:
         this.show_all_bgs = False
     return()
+
+def fetch_slow_state():
+    this.slow_state_cfg = tk.IntVar(value=config.get_int("ugc_slow_state"))
+    this.slow_state_cfg = this.slow_state_cfg.get()
+    config.set("ugc_slow_state", this.slow_state_cfg)
+    this.slow_state_cfg = tk.IntVar(value=config.get_int("ugc_slow_state"))
+    this.slow_state = this.slow_state_cfg.get()
+    if this.slow_state == 1:
+        this.slow_state = True
+    else:
+        this.slow_state = False    
+    return
 
 def fetch_gl_cmd():
     try:
@@ -427,18 +446,20 @@ def worker () -> None:
     #this.thread.run()
 
 def Late_State () -> None:
-    this.log.info("LateState...")
-    sleep(5)
-    get_sys_state()
-    this.log.info("LateState Done!")
+    if(this.slow_state):
+        if(this.debug):     
+            this.log.info("SlowState...")
+        sleep(15)
+    else:
+        if(this.debug):
+            this.log.info("FastState...")
+        sleep(5)
+    
+    this.log.info("Getting State...")
+    get_sys_state()    
+    this.log.info("State Done!")
     return
 
-def Fast_State () -> None:
-    this.log.info("FastState...")
-    sleep(1)
-    get_sys_state()
-    this.log.info("FastState Done!")
-    return
 
 def get_sys_state():
     if(this.debug):
@@ -475,6 +496,9 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     qls = Thread(target=QLS, name='UGC-QLS worker', args=(cmdr, is_beta, system, station, entry, state))
     qls.daemon = True
     qls.start()
+    this.dstate = Thread(target=Late_State, name='State-Worker')
+    this.dstate.daemon = True
+    this.dstate.start()
     return
 
 def QLS(cmdr, is_beta, system, station, entry, state):
@@ -492,11 +516,6 @@ def QLS(cmdr, is_beta, system, station, entry, state):
     if this.send_cmdr == 1:
         data['user'] = cmdr    
     get_sys_state()
-    if data['event'] == "FSDJump":
-        dstate = Thread(target=Late_State, name='State-Worker')
-        dstate.daemon = True
-        dstate.start()
-        return
     data["ugc_token_v2"] = dict()
     data["ugc_token_v2"]["uuid"] = this.UUID
     data["ugc_token_v2"]["token"] = this.Hash
@@ -516,9 +535,6 @@ def QLS(cmdr, is_beta, system, station, entry, state):
         this.log.debug("UGC-DEBUG: start req...")
         this.log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
     response = requests.post(this.wurl, data=jsonString, headers=headers)
-    dstate = Thread(target=Fast_State, name='State-Worker')
-    dstate.daemon = True
-    dstate.start()
     if this.debug:
         this.log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
         this.log.debug("UGC-DEBUG: "+this.sys_state)    
@@ -532,6 +548,9 @@ def send_test(cmdr, is_beta):
     thread = Thread(target=send_testth, name='UGC-Test worker', args=(cmdr, is_beta))
     thread.daemon = True
     thread.start()
+    this.dstate = Thread(target=Late_State, name='State-Worker')
+    this.dstate.daemon = True
+    this.dstate.start()
     return
 
 def send_testth(cmdr, is_beta):
