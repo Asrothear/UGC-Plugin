@@ -480,7 +480,7 @@ def get_sys_state():
     this.rurl = config.get_str("ugc_rurl")
     this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
     try:
-        sys_state_data = requests.get(this.rurl, headers=this.paras, verify=False)
+        sys_state_data = requests.get(this.rurl, headers=this.paras)
     except:
         return
         this.sys_state = "API-Server ERROR"
@@ -551,9 +551,10 @@ def send_test(cmdr, is_beta):
 def send_testth(cmdr, is_beta):
     this.log.debug("UGC-DEBUG:TEST start req...")
     this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
-    if this.token =="":
-        if this.vtk_cfg.get().strip() !="":
-            this.token = this.vtk_cfg.get().strip()
+    if this.vtk_cfg.get().strip() !="":
+        this.token = this.vtk_cfg.get().strip()
+        config.set("ugc_token", this.token)
+    
     data = dict()
     if this.send_cmdr == 1:
         data['user'] = this.CMDr
@@ -562,7 +563,7 @@ def send_testth(cmdr, is_beta):
     data['payload'] = "bärenkatapult"    
     jsonString = json.dumps(data).encode('utf-8')   
     this.log.debug("UGC-DEBUG:TEST JSON: "+ str(jsonString) + " _ " +this.token)
-    response = requests.post(this.wurl, data=jsonString, headers=this.paras, verify=False)
+    response = requests.post(this.wurl, data=jsonString, headers=this.paras)
     get_sys_state()
     if this.debug:
         this.log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
