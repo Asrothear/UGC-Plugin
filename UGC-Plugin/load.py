@@ -524,9 +524,7 @@ def QLS(cmdr, is_beta, system, station, entry, state):
             m_data=myfile.read()
             data = json.loads(m_data)
     if this.send_cmdr == 1:
-        data['user'] = cmdr    
-    get_sys_state()
-    
+        data['user'] = cmdr
     jsonString = json.dumps(data)
     jsonString = jsonString.replace("'","").encode('utf-8')
     if this.debug:
@@ -536,6 +534,7 @@ def QLS(cmdr, is_beta, system, station, entry, state):
         updateMainUi(tick_color="white", systems_color="white")
     else:
         updateMainUi(tick_color="red", systems_color="red")
+    #get_sys_state()
     return
 
 def send_test(cmdr, is_beta):
