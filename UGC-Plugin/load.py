@@ -14,7 +14,6 @@ import plug
 from config import config
 from typing import TYPE_CHECKING, Any, List, Literal, Mapping, MutableMapping, Optional, Set, Tuple, Union, cast
 import ugc_updater
-import ugc_crypt
 
 
 class This:
@@ -25,9 +24,9 @@ class This:
         self.STATE_URL = 'https://api.ugc-tools.de/api/v1/State'
         self.TICK = 'https://api.ugc-tools.de/api/v1/Tick'
         self.G_CMD = 'https://api.ugc-tools.de/api/v1/PluginControll'
-        self.__VERSION__ = "3.0" # DONT TOUCH ME !!
-        self.__MINOR__ = "1" # DONT TOUCH ME !!
-        self.__BRANCH__ = "TS rel.2"# DONT TOUCH ME !!
+        self.__VERSION__ = "1.0" # DONT TOUCH ME !!
+        self.__MINOR__ = "0" # DONT TOUCH ME !!
+        self.__BRANCH__ = ""# DONT TOUCH ME !!
         self.CONFIG_MAIN = 'UGC-Plugin' # DONT TOUCH ME !!
         self.HOME = str(Path.home()).replace("\\", "/")
         self.send_cmdr_cfg = None
@@ -47,12 +46,12 @@ class This:
         self.sys_state_data = None
         self.tick = "Start Up"
         self.vtk_cfg = None
+        self.token = None
         #
         self.session: requests.Session = requests.Session()
         self.queue: Queue = Queue()		# Items to be sent by worker thread
         self.lastlookup: requests.Response  # Result of last system lookup
-        self.plugin_name = os.path.basename(os.path.dirname(__file__))
-        self.Crypt = ugc_crypt.ugc_crypt()
+        self.plugin_name = os.path.basename(os.path.dirname(__file__))        
         #
         self.first = True
         # Game state
@@ -71,17 +70,13 @@ class This:
         self.on_foot = False
         self.thread: Optional[threading.Thread] = None
         self.dstate: Optional[threading.Thread] = None
+        self.lstate: Optional[threading.Thread] = None
         self.get_sys_state: Optional[threading.Thread] = None
         self.QLS: Optional[threading.Thread] = None
 
         self.log = logs.getLogger(f'{self.plugin_name}')
 
-        self.hwID = None
-        self.UUID = None
-        self.Hash = None
-        self.verify_token = ""
-
-        self.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':self.__VERSION__, "br":self.__MINOR__,"branch":self.__BRANCH__, "cmdr":str(self.send_cmdr), "uuid":self.UUID, "token":self.Hash}
+        self.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':self.__VERSION__, "br":self.__MINOR__,"branch":self.__BRANCH__, "cmdr":str(self.send_cmdr), "token":self.token}
 
 this = This()
 
@@ -115,8 +110,11 @@ def plugin_start3(plugin_dir: str) -> str:
         config.set("ugc_wurl", this.SEND_TO_URL)
     if not config.get_str("ugc_rurl"):
         config.set("ugc_rurl", this.STATE_URL)
+    if not config.get_str("ugc_token"):
+        config.set("ugc_token", "")
     this.rurl = config.get_str("ugc_rurl")
     this.wurl = config.get_str("ugc_wurl")
+    this.token = config.get_str("ugc_token")
     if this.debug:
         this.log.debug(str(this.rurl))
         this.log.debug(str(this.wurl))
@@ -124,7 +122,6 @@ def plugin_start3(plugin_dir: str) -> str:
         this.log.debug(str(this.tick))
     if config.get_str("ugc_cmdr"):
         this.CMDr = config.get_str("ugc_cmdr").encode("ascii","replace").decode()
-        crypter()
     this.thread = Thread(target=worker, name='UGC worker')
     this.thread.daemon = True
     this.thread.start()
@@ -132,6 +129,9 @@ def plugin_start3(plugin_dir: str) -> str:
     this.dstate = Thread(target=Late_State, name='UGC worker')
     this.dstate.daemon = True
     this.dstate.start()
+    this.lstate = Thread(target=Loop_State, name='UGC loop worker')
+    this.lstate.daemon = True
+    this.lstate.start()
 
     this.log.debug('Done.')
     return this.CONFIG_MAIN
@@ -160,7 +160,8 @@ def plugin_app(parent):
     this.widget_tick_value = tk.Label(frame)
     this.widget_systems_label = tk.Label(frame)
     this.widget_systems_value = tk.Label(frame)
-
+    this.widget_spacer1 = tk.Label(frame)
+    this.widget_spacer2 = tk.Label(frame)
     this.frame = frame
     updateMainUi(systems_color="green")
     #ugc.widget_systems_value["foreground"] = "green"
@@ -174,6 +175,10 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
     this.widget_tick_value["text"] = this.tick
     this.widget_tick_value["foreground"] = tick_color
+    this.widget_spacer1["text"] = ""
+    this.widget_spacer1.grid(row=2, column=0)
+    this.widget_spacer2["text"] = "________________________________________"
+    this.widget_spacer2.grid(row=2, column=1)
     #ugc.widget_tick_label["background"] = "black"
     #ugc.widget_tick_value["background"] = "black"
 
@@ -191,8 +196,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     if not config.get_str("ugc_cmdr"):
         config.set("ugc_cmdr", cmdr.encode("ascii","replace").decode())
         this.CMDr = config.get_str("ugc_cmdr")
-        crypter()
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr),  "token":this.token, "onlyBGS": str(this.show_all_bgs)}
     PADX = 10
     BUTTONX = 12	# indent Checkbuttons and Radiobuttons
     PADY = 2
@@ -212,11 +216,11 @@ def plugin_prefs(parent, cmdr, is_beta):
     this.rurl_cfg.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
     this.rurl_cfg.insert(0,this.rurl)
     #Config Entry for Verify-Token
-    this.vtk_label = nb.Label(frame, text="Verify Token")
+    this.vtk_label = nb.Label(frame, text="Token")
     this.vtk_label.grid(row=13, padx=PADX, sticky=tk.W)
     this.vtk_cfg = nb.Entry(frame)
     this.vtk_cfg.grid(row=13, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
-    this.vtk_cfg.insert(0,"")
+    this.vtk_cfg.insert(0,this.token)
     #config interface
     nb.Checkbutton(frame, text="CMDr Namen übertragen", variable=this.send_cmdr_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Checkbutton(frame, text="Gesamte Liste Zeigen", variable=this.show_all_cfg).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
@@ -243,13 +247,16 @@ def prefs_changed(cmdr, is_beta):
     config.set('ugc_show_all', this.show_all_cfg.get())
     config.set('ugc_show_all_bgs', this.show_all_bgs_cfg.get())
     config.set('ugc_send_cmdr', this.send_cmdr_cfg.get())
-    this.verify_token = this.vtk_cfg.get().strip()
+    config.set("ugc_slow_state", this.slow_state_cfg.get())
+    if(this.vtk_cfg.get().strip() != ""):
+        config.set('ugc_token', this.vtk_cfg.get().strip())
+    this.token = this.vtk_cfg.get().strip()
     this.rurl = config.get_str("ugc_rurl")
     this.wurl = config.get_str("ugc_wurl")
     fetch_debug()
     fetch_send_cmdr()
     fetch_slow_state()
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)} 
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)} 
     fetch_show_all()
     #this.sys_state_Thread.run()
     updateMainUi(tick_color="white", systems_color="green")
@@ -325,6 +332,7 @@ def fetch_show_all_bgs():
         this.show_all_bgs = True
     else:
         this.show_all_bgs = False
+    this.log.debug(this.show_all_bgs)
     return()
 
 def fetch_slow_state():
@@ -409,24 +417,7 @@ def cmdr_data(data, is_beta):
     if not config.get_str("ugc_cmdr"):
         config.set("ugc_cmdr", CMDr.encode("ascii","replace").decode())
         this.CMDr = config.get_str("ugc_cmdr")
-        crypter()
 
-def crypter():
-    if not this.hwID:
-            this.hwID = this.Crypt.ghwid()
-    if not this.UUID:
-            this.UUID = str(this.Crypt.muuid(this.CMDr,this.hwID)).replace("'","|")
-    if not config.get_str("ugc_token"):
-        config.set("ugc_token", this.Crypt.sign(this.CMDr,this.hwID))
-        this.Hash = config.get_str("ugc_token")
-    else:
-        this.Hash = config.get_str("ugc_token")
-    if this.debug:
-        this.log.info(this.CMDr)
-        this.log.info(this.UUID)
-        this.log.info(this.Hash)
-    if not this.Crypt.verify(this.CMDr, this.Hash):
-        this.Hash = this.Crypt.sign(this.CMDr,this.hwID)
 
 def worker () -> None:
     closing = False
@@ -460,15 +451,36 @@ def Late_State () -> None:
     this.log.info("State Done!")
     return
 
+def Loop_State () -> None:
+    while this.shutting_down == False:
+        if(this.debug):     
+            this.log.info("LoopState...")
+        sleep(15)
+        this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
+        sys_state_data = requests.get(this.rurl, headers=this.paras)
+        if(sys_state_data.status_code > 202):
+            try:
+                updateMainUi(tick_color="white", systems_color="red")
+            except:
+                print("BGS-Plugin")
+        else:        
+            jsonstring = sys_state_data.content.decode()
+            systemlist = json.loads(jsonstring)
+            if this.show_all_cfg.get():
+                this.sys_state   = pprint_list(systemlist)
+            else:
+                this.sys_state = pprint_list(systemlist[0])
+        updateMainUi(tick_color="white", systems_color="white")        
+        sleep(1)
 
 def get_sys_state():
     if(this.debug):
         this.log.debug("get_sys_state")
         this.log.debug("show_all_bgs: "+str(this.show_all_bgs))
     this.rurl = config.get_str("ugc_rurl")
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
     try:
-        sys_state_data = requests.get(this.rurl, headers=this.paras)
+        sys_state_data = requests.get(this.rurl, headers=this.paras, verify=False)
     except:
         return
         this.sys_state = "API-Server ERROR"
@@ -496,48 +508,30 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
     qls = Thread(target=QLS, name='UGC-QLS worker', args=(cmdr, is_beta, system, station, entry, state))
     qls.daemon = True
     qls.start()
-    this.dstate = Thread(target=Late_State, name='State-Worker')
-    this.dstate.daemon = True
-    this.dstate.start()
+    #this.dstate = Thread(target=Late_State, name='State-Worker')
+    #this.dstate.daemon = True
+    #this.dstate.start()
     return
 
 def QLS(cmdr, is_beta, system, station, entry, state):
     if(this.debug):
         this.log.debug("QLS")
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
     data = entry
     updateMainUi(systems_color="orange")
     if data['event'] == 'Market':
         with open(''+this.HOME+'/Saved Games/Frontier Developments/Elite Dangerous/market.json', 'r') as myfile:
             m_data=myfile.read()
             data = json.loads(m_data)
-            if this.debug:
-                this.log.debug(data)
     if this.send_cmdr == 1:
         data['user'] = cmdr    
     get_sys_state()
-    data["ugc_token_v2"] = dict()
-    data["ugc_token_v2"]["uuid"] = this.UUID
-    data["ugc_token_v2"]["token"] = this.Hash
-    data["ugc_token_v2"]["verify"] = this.verify_token
-    data["ugc_additional"] = dict()
-    data["ugc_additional"]["system"] = system
-    data["ugc_additional"]["station"] = station
-    data['ugc_p_version'] = this.__VERSION__
-    data['ugc_p_minor'] = this.__MINOR__
-    data['ugc_p_branch'] = this.__BRANCH__
     
-    headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
     jsonString = json.dumps(data)
     jsonString = jsonString.replace("'","").encode('utf-8')
     if this.debug:
-        this.log.debug("UGC-DEBUG: PATH: ")
-        this.log.debug("UGC-DEBUG: start req...")
         this.log.debug("UGC-DEBUG: JSON:"+ str(jsonString))
-    response = requests.post(this.wurl, data=jsonString, headers=headers)
-    if this.debug:
-        this.log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
-        this.log.debug("UGC-DEBUG: "+this.sys_state)    
+    response = requests.post(this.wurl, data=jsonString, headers=this.paras) 
     if(response.status_code <= 202):
         updateMainUi(tick_color="white", systems_color="white")
     else:
@@ -545,6 +539,7 @@ def QLS(cmdr, is_beta, system, station, entry, state):
     return
 
 def send_test(cmdr, is_beta):
+    getconfig()
     thread = Thread(target=send_testth, name='UGC-Test worker', args=(cmdr, is_beta))
     thread.daemon = True
     thread.start()
@@ -554,31 +549,20 @@ def send_test(cmdr, is_beta):
     return
 
 def send_testth(cmdr, is_beta):
-    getconfig()
     this.log.debug("UGC-DEBUG:TEST start req...")
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "uuid":this.UUID, "token":this.Hash, "onlyBGS": str(this.show_all_bgs)}
-    if this.verify_token =="":
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
+    if this.token =="":
         if this.vtk_cfg.get().strip() !="":
-            this.verify_token = this.vtk_cfg.get().strip()
+            this.token = this.vtk_cfg.get().strip()
     data = dict()
     if this.send_cmdr == 1:
         data['user'] = this.CMDr
     updateMainUi(systems_color="orange")
     data["event"] = "test"
-    data["ugc_token_v2"] = dict()
-    data["ugc_token_v2"]["uuid"] = this.UUID
-    data["ugc_token_v2"]["token"] = this.Hash
-    data["ugc_token_v2"]["verify"] = this.verify_token
-    
-    data['ugc_p_version'] = this.__VERSION__
-    data['ugc_p_minor'] = this.__MINOR__
-    data['ugc_p_branch'] = this.__BRANCH__
-    data['payload'] = "bärenkatapult"
-    
-    headers = { 'Content-type': 'application/json', 'Accept': 'text/plain' }
+    data['payload'] = "bärenkatapult"    
     jsonString = json.dumps(data).encode('utf-8')   
-    this.log.debug("UGC-DEBUG:TEST JSON: "+ str(jsonString))
-    response = requests.post(this.wurl, data=jsonString, headers=headers)
+    this.log.debug("UGC-DEBUG:TEST JSON: "+ str(jsonString) + " _ " +this.token)
+    response = requests.post(this.wurl, data=jsonString, headers=this.paras, verify=False)
     get_sys_state()
     if this.debug:
         this.log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
@@ -597,17 +581,17 @@ def getconfig():
     config.set('ugc_show_all', this.show_all_cfg.get())
     config.set('ugc_show_all_bgs', this.show_all_bgs_cfg.get())
     config.set('ugc_send_cmdr', this.send_cmdr_cfg.get())
+    config.set("ugc_slow_state", this.slow_state_cfg.get())
     this.rurl = config.get_str("ugc_rurl")
     this.wurl = config.get_str("ugc_wurl")    
     if config.get_int("ugc_show_all_bgs") == 1:
         this.show_all_bgs = True
     else:
         this.show_all_bgs = False
-
     if config.get_int("ugc_debug") == 1:
         this.debug = True
     else:
-        this.debug = False    
+        this.debug = False
     if config.get_int("ugc_send_cmdr") == 1:
         this.send_cmdr = True
     else:
@@ -616,4 +600,9 @@ def getconfig():
         this.show_all = True
     else:
         this.show_all = False
+    if(this.debug):
+        this.log.debug(this.show_all_bgs)
+        this.log.debug(this.debug)
+        this.log.debug(this.send_cmdr)
+        this.log.debug(this.show_all)
     return
