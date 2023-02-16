@@ -563,11 +563,10 @@ def send_test(cmdr, is_beta):
 
 def send_testth(cmdr, is_beta):
     this.log.debug("UGC-DEBUG:TEST start req...")
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
     if this.vtk_cfg.get().strip() !="":
         this.token = this.vtk_cfg.get().strip()
-        config.set("ugc_token", this.token)
-    
+        config.set("ugc_token", this.token)    
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
     data = dict()
     if this.send_cmdr == 1:
         data['user'] = this.CMDr
