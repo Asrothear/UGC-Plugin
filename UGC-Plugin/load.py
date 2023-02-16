@@ -11,15 +11,13 @@ import threading
 from threading import Thread
 from time import sleep
 import plug
-from config import config
+from config import applongname, appname, appversion_nobuild, config, debug_senders, user_agent
 from typing import TYPE_CHECKING, Any, List, Literal, Mapping, MutableMapping, Optional, Set, Tuple, Union, cast
 import ugc_updater
 
-
 class This:
-
     def __init__(self):
-
+        self.parent: tk.Tk
         self.SEND_TO_URL = 'https://api.ugc-tools.de/api/v1/QLS'
         self.STATE_URL = 'https://api.ugc-tools.de/api/v1/State'
         self.TICK = 'https://api.ugc-tools.de/api/v1/Tick'
@@ -47,6 +45,8 @@ class This:
         self.tick = "Start Up"
         self.vtk_cfg = None
         self.token = None
+        self.status = None
+        self.old_status = None
         #
         self.session: requests.Session = requests.Session()
         self.queue: Queue = Queue()		# Items to be sent by worker thread
@@ -73,9 +73,7 @@ class This:
         self.lstate: Optional[threading.Thread] = None
         self.get_sys_state: Optional[threading.Thread] = None
         self.QLS: Optional[threading.Thread] = None
-
         self.log = logs.getLogger(f'{self.plugin_name}')
-
         self.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':self.__VERSION__, "br":self.__MINOR__,"branch":self.__BRANCH__, "cmdr":str(self.send_cmdr), "token":self.token}
 
 this = This()
@@ -136,6 +134,17 @@ def plugin_start3(plugin_dir: str) -> str:
     this.log.debug('Done.')
     return this.CONFIG_MAIN
 
+def send_status(Text: str) -> None:
+    if not this.status: 
+        this.status = this.parent.nametowidget(f".{appname.lower()}.status")
+    """Update status text."""
+    if not Text:
+        Text = this.old_status
+    else:
+        this.old_status = this.status['text']
+    this.status['text'] = Text
+    this.status.update_idletasks()
+
 def plugin_stop() -> None:
     """Stop this plugin."""
     this.log.debug('Closing...')
@@ -152,6 +161,7 @@ def plugin_stop() -> None:
         plugin_update()
 
 def plugin_app(parent):
+    this.parent = parent
     frame = tk.Frame(parent)
     this.emptyFrame = tk.Frame(frame)
     frame.columnconfigure(1, weight=1)
@@ -190,7 +200,6 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_systems_value["foreground"] = systems_color
     #ugc.widget_systems_label["background"] = "black"
     #ugc.widget_systems_value["background"] = "black"
-#
 
 def plugin_prefs(parent, cmdr, is_beta):
     if not config.get_str("ugc_cmdr"):
@@ -371,15 +380,15 @@ def get_ugc_tick():
         tick = requests.get(this.TICK)
     except:
         if(this.tick == None):
+            plug.show_error("UGC API-Server ERROR")
             return
-            this.tick = "API-Server ERROR"
         return(this.tick)
     if(tick.status_code > 202):
         a = "WIP"
         #updateMainUi(tick_color="white", systems_color="red")
     if(tick.status_code > 405):
+        plug.show_error("UGC API-Server ERROR")
         return
-        this.tick = "API-Server ERROR"
     else: 
         this.tick = tick.content.decode()
         this.tick = json.loads(this.tick)
@@ -455,13 +464,14 @@ def Loop_State () -> None:
     while this.shutting_down == False:
         if(this.debug):     
             this.log.info("LoopState...")
-        sleep(15)
+        sleep(10)
         this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
         sys_state_data = requests.get(this.rurl, headers=this.paras)
         if(sys_state_data.status_code > 202):
             try:
                 updateMainUi(tick_color="white", systems_color="red")
             except:
+                plug.show_error("UGC Plugin unexcepted error")
                 print("BGS-Plugin")
         else:        
             jsonstring = sys_state_data.content.decode()
@@ -470,8 +480,12 @@ def Loop_State () -> None:
                 this.sys_state   = pprint_list(systemlist)
             else:
                 this.sys_state = pprint_list(systemlist[0])
-        updateMainUi(tick_color="white", systems_color="white")        
+        updateMainUi(tick_color="white", systems_color="white")
+        if(this.debug):     
+            send_status("State Updated")
         sleep(1)
+        if(this.debug):
+            send_status("")
 
 def get_sys_state():
     if(this.debug):
@@ -482,8 +496,7 @@ def get_sys_state():
     try:
         sys_state_data = requests.get(this.rurl, headers=this.paras)
     except:
-        return
-        this.sys_state = "API-Server ERROR"
+        plug.show_error("UGC API-Server ERROR")
         return
     if(sys_state_data.status_code > 202):
         try:
@@ -491,8 +504,8 @@ def get_sys_state():
         except:
             print("BGS-Plugin")
     if(sys_state_data.status_code > 405):
+        plug.show_error("UGC API-Server ERROR")
         return
-        this.sys_state = "API-Server ERROR"
     else:        
         jsonstring = sys_state_data.content.decode()
         systemlist = json.loads(jsonstring)
@@ -524,7 +537,9 @@ def QLS(cmdr, is_beta, system, station, entry, state):
             m_data=myfile.read()
             data = json.loads(m_data)
     if this.send_cmdr == 1:
-        data['user'] = cmdr
+        data['user'] = cmdr    
+    get_sys_state()
+    
     jsonString = json.dumps(data)
     jsonString = jsonString.replace("'","").encode('utf-8')
     if this.debug:
@@ -534,7 +549,6 @@ def QLS(cmdr, is_beta, system, station, entry, state):
         updateMainUi(tick_color="white", systems_color="white")
     else:
         updateMainUi(tick_color="red", systems_color="red")
-    #get_sys_state()
     return
 
 def send_test(cmdr, is_beta):
