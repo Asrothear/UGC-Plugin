@@ -15,8 +15,8 @@ Task overview
   - [ ] ~~Discordbot Published~~
   - [ ] ~~Full Acces~~
 
-- [x] Working on new API Server and Plugin verificaton Method, for further Information see Beta Branches or upcoming Versions 3.0.0+ 
-
+- [x] ~~Working on new API Server and Plugin verificaton Method, for further Information see Beta Branches or upcoming Versions 3.0.0+ ~~
+- [x] Developeing a Standalone Version, just because it makes things easier for me
 ----------------------------------------------------------------------------------------------------------------------------
 
 At the actual developement state the source-codes for the webserver and the Discord-Bot remain unpublished,
