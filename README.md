@@ -1,5 +1,7 @@
 # UGC EDMC-Plugin
-
+----------------------------------------------------------------------------------------------------------------------------
+## Developing a Standalone Version, just because it makes things easier for me.  [New Repo](https://github.com/Asrothear/UGC-App)
+----------------------------------------------------------------------------------------------------------------------------
 This is a EDMC Plugin sends all Journal Events from Elite Dangerous to a Webserver to create an indipendent Database for Communities to:
 1. Track their BGS activity
 2. Track their Fleet Carrier
@@ -15,7 +17,8 @@ Task overview
   - [ ] ~~Discordbot Published~~
   - [ ] ~~Full Acces~~
 
-- [x] Working on new API Server and Plugin verificaton Method, for further Information see Beta Branches or upcoming Versions 3.0.0+ 
+- [x] ~~Working on new API Server and Plugin verificaton Method, for further Information see Beta Branches or upcoming Versions 3.0.0~~
+- [x] Developing a Standalone Version, just because it makes things easier for me.  [New Repo](https://github.com/Asrothear/UGC-App)
 
 ----------------------------------------------------------------------------------------------------------------------------
 
