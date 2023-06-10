@@ -97,13 +97,13 @@ if not this.log.hasHandlers():
 def plugin_start3(plugin_dir: str) -> str:
     this.log.info(""+str(this.__VERSION__)+"."+this.__MINOR__+" "+str(this.__BRANCH__))
     this.log.debug('Starting worker thread...')
-    fetch_debug()
-    fetch_gl_cmd()
+    #fetch_debug()
+    #fetch_gl_cmd()
     fetch_update()
-    fetch_send_cmdr()
-    fetch_show_all()
-    fetch_slow_state() 
-    get_ugc_tick()
+    #fetch_send_cmdr()
+    #fetch_show_all()
+    #fetch_slow_state() 
+    #get_ugc_tick()
     if not config.get_str("ugc_wurl"):
         config.set("ugc_wurl", this.SEND_TO_URL)
     if not config.get_str("ugc_rurl"):
@@ -123,13 +123,13 @@ def plugin_start3(plugin_dir: str) -> str:
     this.thread = Thread(target=worker, name='UGC worker')
     this.thread.daemon = True
     this.thread.start()
-    get_sys_state()
+    #get_sys_state()
     this.dstate = Thread(target=Late_State, name='UGC worker')
     this.dstate.daemon = True
-    this.dstate.start()
+    #this.dstate.start()
     this.lstate = Thread(target=Loop_State, name='UGC loop worker')
     this.lstate.daemon = True
-    this.lstate.start()
+    #this.lstate.start()
 
     this.log.debug('Done.')
     return this.CONFIG_MAIN
@@ -179,11 +179,11 @@ def plugin_app(parent):
 
 def updateMainUi(tick_color="orange", systems_color="orange"):
     # Last tick
-    get_ugc_tick()
+    #get_ugc_tick()
     this.widget_tick_label.grid(row=0, column=0, sticky=tk.W)
     this.widget_tick_label["text"] = "Last Tick:"
     this.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
-    this.widget_tick_value["text"] = this.tick
+    this.widget_tick_value["text"] = "!! Outdateted !!"
     this.widget_tick_value["foreground"] = tick_color
     this.widget_spacer1["text"] = ""
     this.widget_spacer1.grid(row=2, column=0)
@@ -196,7 +196,7 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
     this.widget_systems_label["text"] = "Systems:"
     this.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
-    this.widget_systems_value["text"] = this.sys_state
+    this.widget_systems_value["text"] = "!! Bitte UGC App benutzen !!"
     this.widget_systems_value["foreground"] = systems_color
     #ugc.widget_systems_label["background"] = "black"
     #ugc.widget_systems_value["background"] = "black"
@@ -520,7 +520,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
         this.log.debug("journal_entry")
     qls = Thread(target=QLS, name='UGC-QLS worker', args=(cmdr, is_beta, system, station, entry, state))
     qls.daemon = True
-    qls.start()
+    #qls.start()
     #this.dstate = Thread(target=Late_State, name='State-Worker')
     #this.dstate.daemon = True
     #this.dstate.start()
@@ -552,13 +552,13 @@ def QLS(cmdr, is_beta, system, station, entry, state):
     return
 
 def send_test(cmdr, is_beta):
-    getconfig()
+    #getconfig()
     thread = Thread(target=send_testth, name='UGC-Test worker', args=(cmdr, is_beta))
     thread.daemon = True
-    thread.start()
+    #thread.start()
     this.dstate = Thread(target=Late_State, name='State-Worker')
     this.dstate.daemon = True
-    this.dstate.start()
+    #this.dstate.start()
     return
 
 def send_testth(cmdr, is_beta):
