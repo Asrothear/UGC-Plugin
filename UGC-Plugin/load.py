@@ -97,12 +97,12 @@ if not this.log.hasHandlers():
 def plugin_start3(plugin_dir: str) -> str:
     this.log.info(""+str(this.__VERSION__)+"."+this.__MINOR__+" "+str(this.__BRANCH__))
     this.log.debug('Starting worker thread...')
-    #fetch_debug()
-    #fetch_gl_cmd()
+    fetch_debug()
+    fetch_gl_cmd()
     fetch_update()
-    #fetch_send_cmdr()
-    #fetch_show_all()
-    #fetch_slow_state() 
+    fetch_send_cmdr()
+    fetch_show_all()
+    fetch_slow_state() 
     #get_ugc_tick()
     if not config.get_str("ugc_wurl"):
         config.set("ugc_wurl", this.SEND_TO_URL)
@@ -126,10 +126,10 @@ def plugin_start3(plugin_dir: str) -> str:
     #get_sys_state()
     this.dstate = Thread(target=Late_State, name='UGC worker')
     this.dstate.daemon = True
-    #this.dstate.start()
+    this.dstate.start()
     this.lstate = Thread(target=Loop_State, name='UGC loop worker')
     this.lstate.daemon = True
-    #this.lstate.start()
+    this.lstate.start()
 
     this.log.debug('Done.')
     return this.CONFIG_MAIN
@@ -183,7 +183,7 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_tick_label.grid(row=0, column=0, sticky=tk.W)
     this.widget_tick_label["text"] = "Last Tick:"
     this.widget_tick_value.grid(row=0, column=1, sticky=tk.EW)
-    this.widget_tick_value["text"] = "!! Outdateted !!"
+    this.widget_tick_value["text"] = this.tick
     this.widget_tick_value["foreground"] = tick_color
     this.widget_spacer1["text"] = ""
     this.widget_spacer1.grid(row=2, column=0)
@@ -196,7 +196,7 @@ def updateMainUi(tick_color="orange", systems_color="orange"):
     this.widget_systems_label.grid(row=1, column=0, sticky=tk.W)
     this.widget_systems_label["text"] = "Systems:"
     this.widget_systems_value.grid(row=1, column=1, sticky=tk.EW)
-    this.widget_systems_value["text"] = "!! Bitte UGC App benutzen !!"
+    this.widget_systems_value["text"] = this.sys_state
     this.widget_systems_value["foreground"] = systems_color
     #ugc.widget_systems_label["background"] = "black"
     #ugc.widget_systems_value["background"] = "black"
@@ -245,7 +245,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     nb.Label(frame, text="Version: "+str(this.__VERSION__)+"."+this.__MINOR__+" "+str(this.__BRANCH__)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     nb.Label(frame, text="CMDr: "+str(cmdr)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     
-    nb.Button(frame, text="Test", command=lambda:send_test(cmdr, is_beta)).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
+    nb.Button(frame, text="Test", command=lambda:send_testth()).grid(columnspan=2, padx=BUTTONX, pady=(5,0), sticky=tk.W)
     return frame
 
 def prefs_changed(cmdr, is_beta):
@@ -551,39 +551,19 @@ def QLS(cmdr, is_beta, system, station, entry, state):
         updateMainUi(tick_color="red", systems_color="red")
     return
 
-def send_test(cmdr, is_beta):
-    #getconfig()
-    thread = Thread(target=send_testth, name='UGC-Test worker', args=(cmdr, is_beta))
+def send_testth():
+    thread = Thread(target=send_test, name='UGC-Test worker')
     thread.daemon = True
-    #thread.start()
-    this.dstate = Thread(target=Late_State, name='State-Worker')
-    this.dstate.daemon = True
-    #this.dstate.start()
+    thread.start()
     return
 
-def send_testth(cmdr, is_beta):
+def send_test():
     this.log.debug("UGC-DEBUG:TEST start req...")
-    if this.vtk_cfg.get().strip() !="":
-        this.token = this.vtk_cfg.get().strip()
-        config.set("ugc_token", this.token)    
-    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':this.__VERSION__, "br":this.__MINOR__,"branch":this.__BRANCH__,"cmdr":str(this.send_cmdr), "token":this.token, "onlyBGS": str(this.show_all_bgs)}
-    data = dict()
-    if this.send_cmdr == 1:
-        data['user'] = this.CMDr
-    updateMainUi(systems_color="orange")
-    data["event"] = "test"
-    data['payload'] = "bärenkatapult"    
-    jsonString = json.dumps(data).encode('utf-8')   
-    this.log.debug("UGC-DEBUG:TEST JSON: "+ str(jsonString) + " _ " +this.token)
-    response = requests.post(this.wurl, data=jsonString, headers=this.paras)
+    this.paras = {'Content-type': 'application/json', 'Accept': 'text/plain', 'version':'5', "token":'#EDCD-TEST`"-$'} # Version is Delay in seconds. Increasing this will increase the delay
+    response = requests.get('https://api.ugc-tools.de/api/v1/State', headers=this.paras)
+    this.log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
+    this.log.debug(response.content.decode()) 
     get_sys_state()
-    if this.debug:
-        this.log.debug("UGC-DEBUG: req sent. ERROR:"+str(response.status_code))
-        this.log.debug("UGC-DEBUG: "+this.sys_state)
-    if(response.status_code <= 202):
-        updateMainUi(tick_color="white", systems_color="white")
-    else:
-        updateMainUi(tick_color="red", systems_color="red")
     return
 
 def getconfig():
