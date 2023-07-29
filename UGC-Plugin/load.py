@@ -314,6 +314,7 @@ def fetch_update():
     return(this.update)
 
 def plugin_update():
+    return()
     auto_updater = ugc_updater.ugc_updater()
     downloaded = auto_updater.download_latest()
     if downloaded:
