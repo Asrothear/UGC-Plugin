@@ -103,7 +103,7 @@ def plugin_start3(plugin_dir: str) -> str:
     fetch_send_cmdr()
     fetch_show_all()
     fetch_slow_state() 
-    #get_ugc_tick()
+    get_ugc_tick()
     if not config.get_str("ugc_wurl"):
         config.set("ugc_wurl", this.SEND_TO_URL)
     if not config.get_str("ugc_rurl"):
